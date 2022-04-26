@@ -29,7 +29,7 @@ function render_block_core_comment_content( $attributes, $content, $block ) {
 	}
 
 	$moderation_note = '';
-	if ( '0' == $comment->comment_approved ) {
+	if ( '0' === $comment->comment_approved ) {
 		$commenter = wp_get_current_commenter();
 
 		if ( $commenter['comment_author_email'] ) {
