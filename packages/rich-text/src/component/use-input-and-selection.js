@@ -132,6 +132,16 @@ export function useInputAndSelection( props ) {
 				onSelectionChange,
 			} = propsRef.current;
 
+			const isDisabled =
+				! element.contentEditable ||
+				element.contentEditable === 'false';
+
+			// Ignore mouse and keyboard events if the RichText is disabled
+			// for instance when it's wrapped in useDisabled.
+			if ( isDisabled ) {
+				return;
+			}
+
 			// If the selection changes where the active element is a parent of
 			// the rich text instance (writing flow), call `onSelectionChange`
 			// for the rich text instance that contains the start or end of the
