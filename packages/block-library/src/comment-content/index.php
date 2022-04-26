@@ -28,6 +28,18 @@ function render_block_core_comment_content( $attributes, $content, $block ) {
 		return '';
 	}
 
+	$moderation_note = '';
+	if ( '0' == $comment->comment_approved ) {
+		$commenter = wp_get_current_commenter();
+
+		if ( $commenter['comment_author_email'] ) {
+			$moderation_note = __( 'Your comment is awaiting moderation.' );
+		} else {
+			$moderation_note = __( 'Your comment is awaiting moderation. This is a preview; your comment will be visible after it has been approved.' );
+		}
+		$moderation_note = '<em class="comment-awaiting-moderation">' . $moderation_note . '</em>';
+	}
+
 	$classes = '';
 	if ( isset( $attributes['textAlign'] ) ) {
 		$classes .= 'has-text-align-' . $attributes['textAlign'];
@@ -36,8 +48,9 @@ function render_block_core_comment_content( $attributes, $content, $block ) {
 	$wrapper_attributes = get_block_wrapper_attributes( array( 'class' => $classes ) );
 
 	return sprintf(
-		'<div %1$s>%2$s</div>',
+		'<div %1$s>%2$s%3$s</div>',
 		$wrapper_attributes,
+		$moderation_note,
 		$comment_text
 	);
 }
