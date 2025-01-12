@@ -517,7 +517,6 @@ export default function LogoEdit( {
 				onInitialSelectLogo( image );
 			},
 			onError: onUploadError,
-			onRemoveLogo,
 		} );
 	};
 
