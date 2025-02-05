@@ -137,6 +137,8 @@ function BlockList( { filterValue } ) {
 		<div
 			ref={ blockTypesListRef }
 			className="edit-site-block-types-item-list"
+			// By default, BlockMenuItem has a role=listitem so this div must have a list role.
+			role="list"
 		>
 			{ filteredBlockTypes.map( ( block ) => (
 				<BlockMenuItem
