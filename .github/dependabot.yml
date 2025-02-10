@@ -19,8 +19,4 @@ updates:
                   - 'actions/setup-java'
                   - 'gradle/*'
                   - 'reactivecircus/*'
-          react-native:
-              patterns:
-                  - 'actions/setup-java'
-                  - 'gradle/*'
-                  - 'reactivecircus/*'
+                  - 'ruby/setup-ruby'
