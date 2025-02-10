@@ -101,6 +101,7 @@ jobs:
                   ref: ${{ matrix.branch }}
                   token: ${{ secrets.GUTENBERG_TOKEN }}
                   show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
+                  persist-credentials: true
 
             - name: Update the Changelog to include the release notes
               run: |

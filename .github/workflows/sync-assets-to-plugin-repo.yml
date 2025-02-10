@@ -33,6 +33,7 @@ jobs:
                       assets
                   show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
                   path: git
+                  persist-credentials: false
 
             - name: Copy files from git checkout to svn working copy
               run: cp -R git/assets/* assets
