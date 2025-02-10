@@ -25,7 +25,7 @@ jobs:
               run: |
                   latest_version_in_core_repo=$(curl -s 'https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request\[slug\]=gutenberg' | jq -r '.version')
                   echo "Latest Core Repo version: $latest_version_in_core_repo"
-                  echo "version=$latest_version_in_core_repo" >> $GITHUB_OUTPUT
+                  echo "version=$latest_version_in_core_repo" >> "$GITHUB_OUTPUT"
 
             - name: Decide if it is a trunk or tag update
               id: compute_should_update_trunk
@@ -60,7 +60,7 @@ jobs:
                   fi
 
                   echo "Should update trunk: $shouldUpdateTrunk"
-                  echo "should_update_trunk=$shouldUpdateTrunk" >> $GITHUB_OUTPUT
+                  echo "should_update_trunk=$shouldUpdateTrunk" >> "$GITHUB_OUTPUT"
 
     get-release-branch:
         name: Get release branch name
@@ -76,7 +76,7 @@ jobs:
               run: |
                   IFS='.' read -r -a VERSION_ARRAY <<< "${TAG#v}"
                   RELEASE_BRANCH="release/${VERSION_ARRAY[0]}.${VERSION_ARRAY[1]}"
-                  echo "release_branch=${RELEASE_BRANCH}" >> $GITHUB_OUTPUT
+                  echo "release_branch=${RELEASE_BRANCH}" >> "$GITHUB_OUTPUT"
 
     update-changelog:
         name: Update Changelog on ${{ matrix.branch }} branch
