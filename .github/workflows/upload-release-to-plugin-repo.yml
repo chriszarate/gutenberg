@@ -31,9 +31,9 @@ jobs:
               id: compute_should_update_trunk
               env:
                   GITHUB_REF: ${{ github.ref }}
+                  LATEST_VERSION: ${{ steps.compute_latest_version_in_core_repo.outputs.version }}
               run: |
                   latestPublishedVersion=$(echo "$GITHUB_REF" | sed -E 's/refs\/tags\/(v?)([0-9.]+)/\2/')
-                  latestVersionInCoreRepo="${{ steps.compute_latest_version_in_core_repo.outputs.version }}"
 
                   # Determines if the first version string is greater than the second version string.
                   #
@@ -55,7 +55,7 @@ jobs:
                   # than the version currently published in the WP plugins repo. If not, then it
                   # will upload it as a new tag.
                   shouldUpdateTrunk=false
-                  if is_first_version_greater_than_second "$latestPublishedVersion" "$latestVersionInCoreRepo"; then
+                  if is_first_version_greater_than_second "$latestPublishedVersion" "$LATEST_VERSION"; then
                      shouldUpdateTrunk=true
                   fi
 
@@ -135,6 +135,8 @@ jobs:
                   git config user.email gutenberg@wordpress.org
 
             - name: Commit the Changelog update
+              env:
+                  TARGET_BRANCH: ${{ matrix.branch }}
               run: |
                   git add changelog.txt
                   # Remove files that are not meant to be committed
@@ -143,7 +145,7 @@ jobs:
                   # Only attempt to commit changelog if it has been modified.
                   if ! git diff-index --quiet HEAD --; then
                     git commit -m "Update Changelog for ${TAG#v}"
-                    git push --set-upstream origin "${{ matrix.branch }}"
+                    git push --set-upstream origin "$TARGET_BRANCH"
                   fi
 
             - name: Upload Changelog artifact

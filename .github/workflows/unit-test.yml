@@ -52,10 +52,12 @@ jobs:
               run: npx lerna run build
 
             - name: Running the tests
+              env:
+                  MAXWORKERS: ${{ steps.cpu-cores.outputs.count }}
               run: |
                   npm run test:unit -- \
                     --ci \
-                    --maxWorkers="${{ steps.cpu-cores.outputs.count }}" \
+                    --maxWorkers="$MAXWORKERS" \
                     --shard="${{ matrix.shard }}" \
                     --cacheDirectory="$HOME/.jest-cache"
 
@@ -90,7 +92,9 @@ jobs:
               run: npx lerna run build
 
             - name: Run the date tests
-              run: npm run test:unit:date -- --ci --maxWorkers=${{ steps.cpu-cores.outputs.count }} --cacheDirectory="$HOME/.jest-cache"
+              env:
+                  MAXWORKERS: ${{ steps.cpu-cores.outputs.count }}
+              run: npm run test:unit:date -- --ci --maxWorkers="$MAXWORKERS" --cacheDirectory="$HOME/.jest-cache"
 
     compute-previous-wordpress-version:
         name: Compute previous WordPress version
@@ -366,4 +370,6 @@ jobs:
               run: npx lerna run build
 
             - name: Running the tests
-              run: npm run test:native -- --ci --maxWorkers=${{ steps.cpu-cores.outputs.count }} --cacheDirectory="$HOME/.jest-cache"
+              env:
+                  MAXWORKERS: ${{ steps.cpu-cores.outputs.count }}
+              run: npm run test:native -- --ci --maxWorkers="$MAXWORKERS" --cacheDirectory="$HOME/.jest-cache"
