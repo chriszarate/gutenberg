@@ -23,6 +23,8 @@ jobs:
     e2e-playwright:
         name: Playwright - ${{ matrix.part }}
         runs-on: ubuntu-latest
+        permissions:
+          contents: read
         if: ${{ github.repository == 'WordPress/gutenberg' || github.event_name == 'pull_request' }}
         strategy:
             fail-fast: false
@@ -77,6 +79,7 @@ jobs:
         if: ${{ !cancelled() }}
         needs: [e2e-playwright]
         runs-on: ubuntu-latest
+        permissions: {}
         outputs:
             has-flaky-test-report: ${{ !!steps.merge-flaky-tests-reports.outputs.artifact-id }}
         steps:
@@ -104,6 +107,10 @@ jobs:
         needs: [merge-artifacts]
         if: ${{ needs.merge-artifacts.outputs.has-flaky-test-report == 'true' }}
         runs-on: ubuntu-latest
+        permissions:
+          contents: read
+          issues: write
+          pull-requests: write
         steps:
             # Checkout defaults to using the branch which triggered the event, which
             # isn't necessarily `trunk` (e.g. in the case of a merge).

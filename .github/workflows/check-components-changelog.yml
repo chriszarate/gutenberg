@@ -23,6 +23,8 @@ jobs:
     check:
         name: Check CHANGELOG diff
         runs-on: ubuntu-latest
+        permissions:
+          contents: read
         steps:
             - name: 'Get PR commit count'
               run: echo "PR_COMMIT_COUNT=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"

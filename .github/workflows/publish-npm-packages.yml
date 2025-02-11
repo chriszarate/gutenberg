@@ -31,6 +31,8 @@ jobs:
     release:
         name: Release - ${{ github.event.inputs.release_type }}
         runs-on: ubuntu-latest
+        permissions:
+          contents: read
         environment: WordPress packages
         steps:
             - name: Checkout (for CLI)

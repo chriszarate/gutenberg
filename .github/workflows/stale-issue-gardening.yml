@@ -12,6 +12,9 @@ jobs:
     issue-gardening:
         name: ${{ matrix.name }}
         runs-on: ubuntu-latest
+        permissions:
+          issues: write
+          pull-requests: write
         if: ${{ github.repository == 'WordPress/gutenberg' }}
         strategy:
             matrix:
