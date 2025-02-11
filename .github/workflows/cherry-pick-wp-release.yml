@@ -90,16 +90,16 @@ jobs:
                   COMMIT_SHA="${commit_sha}"
                   echo "Target branch: $TARGET_BRANCH"
                   echo "Commit SHA: $COMMIT_SHA"
-                  git checkout $TARGET_BRANCH
-                  git cherry-pick $COMMIT_SHA || echo "cherry-pick-failed" > result
+                  git checkout "$TARGET_BRANCH"
+                  git cherry-pick "$COMMIT_SHA" || echo "cherry-pick-failed" > result
                   if [ -f result ] && grep -q "cherry-pick-failed" result; then
                     echo "conflict=true" >> "$GITHUB_ENV"
                     git cherry-pick --abort
                   else
-                    CHERRY_PICK_SHA=$(git rev-parse HEAD)
+                    CHERRY_PICK_SHA="$(git rev-parse HEAD)"
                     echo "conflict=false" >> "$GITHUB_ENV"
                     echo "cherry_pick_sha=$CHERRY_PICK_SHA" >> "$GITHUB_ENV"
-                    git push origin $TARGET_BRANCH
+                    git push origin "$TARGET_BRANCH"
                   fi
 
             - name: Remove cherry-pick label

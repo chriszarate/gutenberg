@@ -187,7 +187,7 @@ jobs:
               env:
                   PLUGIN_URL: ${{ github.event.release.assets[0].browser_download_url }}
               run: |
-                  curl -L -o gutenberg.zip $PLUGIN_URL
+                  curl -L -o gutenberg.zip "$PLUGIN_URL"
                   unzip gutenberg.zip -d trunk
                   rm gutenberg.zip
 
@@ -238,7 +238,7 @@ jobs:
                   PLUGIN_URL: ${{ github.event.release.assets[0].browser_download_url }}
               run: |
                   # do the magic here
-                  curl -L -o gutenberg.zip $PLUGIN_URL
+                  curl -L -o gutenberg.zip "$PLUGIN_URL"
                   unzip gutenberg.zip -d "$VERSION"
                   rm gutenberg.zip
 

@@ -112,14 +112,14 @@ jobs:
                     -H "Accept: application/json" \
                     -o versions.json \
                     "http://api.wordpress.org/core/stable-check/1.0/"
-                  LATEST_WP_VERSION=$(jq --raw-output 'with_entries(select(.value=="latest"))|keys[]' versions.json)
+                  LATEST_WP_VERSION="$(jq --raw-output 'with_entries(select(.value=="latest"))|keys[]' versions.json)"
                   IFS='.' read LATEST_WP_MAJOR LATEST_WP_MINOR LATEST_WP_PATCH <<< "${LATEST_WP_VERSION}"
-                  if [[ ${LATEST_WP_MINOR} == "0" ]]; then
+                  if [[ "${LATEST_WP_MINOR}" == "0" ]]; then
                     PREVIOUS_WP_SERIES="$((LATEST_WP_MAJOR - 1)).9"
                   else
                     PREVIOUS_WP_SERIES="${LATEST_WP_MAJOR}.$((LATEST_WP_MINOR - 1))"
                   fi
-                  PREVIOUS_WP_VERSION=$(jq --raw-output --arg series "${PREVIOUS_WP_SERIES}" 'with_entries(select(.key|startswith($series)))|keys[-1]' versions.json)
+                  PREVIOUS_WP_VERSION="$(jq --raw-output --arg series "${PREVIOUS_WP_SERIES}" 'with_entries(select(.key|startswith($series)))|keys[-1]' versions.json)"
                   echo "previous-wordpress-version=${PREVIOUS_WP_VERSION}" >> "$GITHUB_OUTPUT"
                   rm versions.json
 
@@ -266,14 +266,14 @@ jobs:
               run: |
                   # Note: relies on PHPUnit execution to fail on test failure.
                   # Extract the number of executed tests from the log file.
-                  if ! num_tests=$(grep -Eo 'OK \([0-9]+ tests' phpunit.log) ; then
-                    if ! num_tests=$(grep -Eo 'Tests: [0-9]+, Assertions:' phpunit.log) ; then
+                  if ! num_tests="$(grep -Eo 'OK \([0-9]+ tests' phpunit.log)" ; then
+                    if ! num_tests="$(grep -Eo 'Tests: [0-9]+, Assertions:' phpunit.log)" ; then
                       echo "PHPUnit failed or did not run. Check the PHPUnit output in the previous step to debug." && exit 1
                     fi
                   fi
                   # Extract just the number of tests from the string.
-                  num_tests=$(echo "$num_tests" | grep -Eo '[0-9]+')
-                  if [ $num_tests -lt 500 ] ; then
+                  num_tests="$(echo "$num_tests" | grep -Eo '[0-9]+')"
+                  if [ "$num_tests" -lt 500 ] ; then
                     echo "Only $num_tests tests passed, which is much fewer than expected." && exit 1
                   fi
                   echo "$num_tests tests passed."

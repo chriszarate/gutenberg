@@ -46,7 +46,7 @@ jobs:
                     exit 1
                   fi
 
-                  core_pr_number=$(basename "${changelog_file}" .md)
+                  core_pr_number="$(basename "${changelog_file}" .md)"
                   core_pr_url="https://github\.com/WordPress/wordpress-develop/pull/${core_pr_number}"
 
                   # Confirm that the entry has the correct core backport PR URL.
