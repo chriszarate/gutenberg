@@ -7,6 +7,10 @@ on:
         paths:
             - assets/**
 
+# Disable permissions for all available scopes by default.
+# Any needed permissions should be configured at the job level.
+permissions: {}
+
 jobs:
     sync-assets:
         name: Sync assets to WordPress.org plugin repo

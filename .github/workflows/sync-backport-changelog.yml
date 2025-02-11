@@ -7,6 +7,10 @@ on:
     issues:
         types: [labeled]
 
+# Disable permissions for all available scopes by default.
+# Any needed permissions should be configured at the job level.
+permissions: {}
+
 jobs:
     sync-backport-changelog:
         name: Sync Core Backport Issue
