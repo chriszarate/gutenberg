@@ -41,10 +41,14 @@ jobs:
                   working-directory: packages/react-native-editor/ios
 
             - name: Switch Xcode version to ${{ matrix.xcode }}
-              run: sudo xcode-select --switch /Applications/Xcode_${{ matrix.xcode }}.app
+              env:
+                  VERSION: ${{ matrix.xcode }}
+              run: sudo xcode-select --switch "/Applications/Xcode_${VERSION}.app"
 
             - name: Launch simulator
-              run: (open -a Simulator && xcrun simctl boot '${{ matrix.device }}') &
+              env:
+                  DEVICE: ${{ matrix.device }}
+              run: (open -a Simulator && xcrun simctl boot "${DEVICE}") &
 
             - name: Setup Node.js and install dependencies
               uses: ./.github/setup-node
@@ -90,7 +94,9 @@ jobs:
               run: test -d packages/react-native-editor/ios/build/WDA || npm run native test:e2e:build-wda
 
             - name: Run iOS Device Tests
-              run: TEST_RN_PLATFORM=ios npm run native device-tests:local  ${{ matrix.native-test-name }}
+              env:
+                  NATIVE_TEST_NAME: ${{ matrix.native-test-name }}
+              run: TEST_RN_PLATFORM=ios npm run native device-tests:local "$NATIVE_TEST_NAME"
 
             - name: Prepare build cache
               run: |

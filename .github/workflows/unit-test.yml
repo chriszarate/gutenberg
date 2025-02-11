@@ -61,11 +61,12 @@ jobs:
             - name: Running the tests
               env:
                   MAXWORKERS: ${{ steps.cpu-cores.outputs.count }}
+                  SHARD: ${{ matrix.shard }}
               run: |
                   npm run test:unit -- \
                     --ci \
                     --maxWorkers="$MAXWORKERS" \
-                    --shard="${{ matrix.shard }}" \
+                    --shard="$SHARD" \
                     --cacheDirectory="$HOME/.jest-cache"
 
     unit-js-date:
@@ -217,7 +218,9 @@ jobs:
 
             # Ensure that Composer installs the correct versions of packages.
             - name: Override PHP version in composer.json
-              run: composer config platform.php ${{ matrix.php }}
+              env:
+                  VERSION: ${{ matrix.php }}
+              run: composer config platform.php "$VERSION"
 
             # Since Composer dependencies are installed using `composer update` and no lock file is in version control,
             # passing a custom cache suffix ensures that the cache is flushed at least once per week.
