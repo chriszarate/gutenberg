@@ -56,7 +56,8 @@ jobs:
                   filter_triggers: ''
                   # dangerous-write:    Valid but ignored because we have to use these writes
                   # dangerous-checkout: Three false positives
-                  disable_rules: dangerous-write,dangerous-checkout
+                  # local-action:       Not much we can do about this
+                  disable_rules: dangerous-write,dangerous-checkout,local-action
 
             - name: Upload SARIF file
               uses: github/codeql-action/upload-sarif@9e8d0789d4a0fa9ceb6b1738f7e269594bdd67f0 # v3.28.9
