@@ -13,13 +13,9 @@ updates:
           - '[Type] Build Tooling'
       ignore:
           - dependency-name: 'actions/setup-java'
-            versions: ['*']
           - dependency-name: 'gradle/*'
-            versions: ['*']
           - dependency-name: 'reactivecircus/*'
-            versions: ['*']
           - dependency-name: 'ruby/setup-ruby'
-            versions: ['*']
       groups:
           github-actions:
               patterns:
