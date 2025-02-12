@@ -119,6 +119,12 @@ const restrictedSyntax = [
 			'CallExpression[callee.name=/^(__|_x|_n|_nx)$/] > Literal[value=/^toggle\\b/i]',
 		message: "Avoid using the verb 'Toggle' in translatable strings",
 	},
+	{
+		selector:
+			'CallExpression[callee.name=/^(__|_x|_n|_nx)$/] > Literal[value=/(?<![-\\w])sidebar(?![-\\w])/i]',
+		message:
+			"Avoid using the word 'sidebar' in translatable strings. Consider using 'panel' instead.",
+	},
 ];
 
 /** `no-restricted-syntax` rules for components. */
