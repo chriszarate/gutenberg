@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Enhancement
+-   `BorderControlDropdown`, `BorderControl`: Reset button is always visible. ([#69066](https://github.com/WordPress/gutenberg/pull/69066)).
+
 ### Internal
 
 -   `NumberControl`: Fix invalid HTML attributes for infinite bounds ([#69033](https://github.com/WordPress/gutenberg/pull/69033)).
