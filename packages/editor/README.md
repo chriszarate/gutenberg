@@ -501,6 +501,7 @@ _Parameters_
 -   _$0.onError_ `Function`: Function called when an error happens.
 -   _$0.onFileChange_ `Function`: Function called each time a file or a temporary representation of the file is available.
 -   _$0.onSuccess_ `Function`: Function called after the final representation of the file is available.
+-   _$0.multiple_ `boolean`: Whether to allow multiple files to be uploaded.
 
 ### MediaUploadCheck
 
