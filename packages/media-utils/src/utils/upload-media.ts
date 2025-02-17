@@ -143,6 +143,7 @@ export function uploadMedia( {
 			// Reset to empty on failure.
 			setAndUpdateFiles( index, null );
 
+			// @wordpress/api-fetch throws any response that isn't in the 200 range as-is.
 			let message: string;
 			if (
 				typeof error === 'object' &&
