@@ -203,14 +203,17 @@ export const ExperimentalEditorProvider = withRegistryProvider(
 					: undefined;
 				const hasDefaultMode = RENDERING_MODES.includes( _defaultMode );
 
+				// Wait for template resolution when rendering in a `template-locked` mode.
+				const hasResolvedMode =
+					hasLoadedPostObject && _defaultMode === 'template-locked'
+						? hasTemplate
+						: true;
+
 				return {
 					editorSettings: getEditorSettings(),
-					isReady: __unstableIsEditorReady() && hasLoadedPostObject,
+					isReady: __unstableIsEditorReady() && hasResolvedMode,
 					mode: getRenderingMode(),
-					defaultMode:
-						hasTemplate && hasDefaultMode
-							? _defaultMode
-							: 'post-only',
+					defaultMode: hasDefaultMode ? _defaultMode : 'post-only',
 					selection: getEditorSelection(),
 					postTypeEntities:
 						post.type === 'wp_template'
