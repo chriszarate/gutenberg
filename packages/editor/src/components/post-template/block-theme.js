@@ -53,7 +53,9 @@ export default function BlockThemeControl( { id } ) {
 		id
 	);
 	const { createSuccessNotice } = useDispatch( noticesStore );
-	const { setRenderingMode } = useDispatch( editorStore );
+	const { setRenderingMode, setDefaultRenderingMode } = unlock(
+		useDispatch( editorStore )
+	);
 
 	const canCreateTemplate = useSelect(
 		( select ) =>
@@ -149,11 +151,11 @@ export default function BlockThemeControl( { id } ) {
 								isSelected={ ! isTemplateHidden }
 								role="menuitemcheckbox"
 								onClick={ () => {
-									setRenderingMode(
-										isTemplateHidden
-											? 'template-locked'
-											: 'post-only'
-									);
+									const newRenderingMode = isTemplateHidden
+										? 'template-locked'
+										: 'post-only';
+									setRenderingMode( newRenderingMode );
+									setDefaultRenderingMode( newRenderingMode );
 								} }
 							>
 								{ __( 'Show template' ) }
