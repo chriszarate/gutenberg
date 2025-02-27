@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 -   `TextControl`: Ensures email and url inputs have consistent LTR alignment in RTL languages ([#68561](https://github.com/WordPress/gutenberg/pull/68561)).
+-   `InputControl`: Ensure consistent placeholder color ([#69334](https://github.com/WordPress/gutenberg/pull/69334)).
 
 ### Enhancement
 
