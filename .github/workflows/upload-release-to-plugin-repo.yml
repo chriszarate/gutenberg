@@ -112,6 +112,8 @@ jobs:
                   persist-credentials: true
 
             - name: Update the Changelog to include the release notes
+              env:
+                  RELEASE_BODY: ${{ github.event.release.body }}
               run: |
                   # First, determine where to insert the new Changelog entry.
                   SERIES="${RELEASE_BRANCH#release/}"
@@ -128,9 +130,7 @@ jobs:
                   head -n $(( "${BEFORE}" - 1 )) changelog.txt > new_changelog.txt
                   printf '= %s =\n\n' "${TAG#v}" >> new_changelog.txt
                   # Need to use a heredoc in order to preserve special characters.
-                  cat <<- "EOF" > release_notes.txt
-                  ${{ github.event.release.body }}
-                  EOF
+                  echo "$RELEASE_BODY" > release_notes.txt
                   # Normalize empty lines: Trim them from beginning and end of file...
                   awk 'NF {p=1} p' <<< "$(< release_notes.txt)" >> new_changelog.txt
                   # ...then add two empty lines at the end.
