@@ -30,10 +30,11 @@ jobs:
 
             # actionlint is static checker for GitHub Actions workflow files.
             # See https://github.com/rhysd/actionlint.
+            # [SC2129](https://www.shellcheck.net/wiki/SC2129) is ignored because it is a stylistic issue.
             - name: Run actionlint
               uses: docker://rhysd/actionlint:1.7.7
               with:
-                  args: "-color -verbose"
+                  args: "-color -verbose -ignore 'SC2129:'"
 
     octoscan:
         name: Octoscan
