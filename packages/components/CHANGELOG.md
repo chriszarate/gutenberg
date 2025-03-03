@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Enhancement
+
+-   `QueryControls`: Add menu_order sorting option if supported by the post type. ([#68781](https://github.com/WordPress/gutenberg/pull/68781)).
+
 ## 29.5.0 (2025-02-28)
 
 ### Documentation
