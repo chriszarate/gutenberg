@@ -24,6 +24,7 @@
 
 ### Bug Fixes
 
+-   `FontSizePicker`: Remove non translatable additional info from font size picker visual label and improve labeling. ([#69011](https://github.com/WordPress/gutenberg/pull/69011)).
 -   `Notice`: Fix text contrast for dark mode ([#69226](https://github.com/WordPress/gutenberg/pull/69226)).
 
 ## 29.4.0 (2025-02-12)
