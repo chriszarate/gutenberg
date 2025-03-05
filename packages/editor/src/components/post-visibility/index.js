@@ -6,6 +6,7 @@ import { useState } from '@wordpress/element';
 import {
 	VisuallyHidden,
 	__experimentalConfirmDialog as ConfirmDialog,
+	TextControl,
 } from '@wordpress/components';
 import { useInstanceId } from '@wordpress/compose';
 import { useSelect, useDispatch } from '@wordpress/data';
@@ -70,8 +71,8 @@ export default function PostVisibility( { onClose } ) {
 		setHasPassword( true );
 	};
 
-	const updatePassword = ( event ) => {
-		editPost( { password: event.target.value } );
+	const updatePassword = ( value ) => {
+		editPost( { password: value } );
 	};
 
 	return (
@@ -110,22 +111,17 @@ export default function PostVisibility( { onClose } ) {
 					onChange={ setPasswordProtected }
 				/>
 				{ hasPassword && (
-					<div className="editor-post-visibility__password">
-						<VisuallyHidden
-							as="label"
-							htmlFor={ `editor-post-visibility__password-input-${ instanceId }` }
-						>
-							{ __( 'Create password' ) }
-						</VisuallyHidden>
-						<input
-							className="editor-post-visibility__password-input"
-							id={ `editor-post-visibility__password-input-${ instanceId }` }
-							type="text"
-							onChange={ updatePassword }
-							value={ password }
-							placeholder={ __( 'Use a secure password' ) }
-						/>
-					</div>
+					<TextControl
+						label={ __( 'Password' ) }
+						onChange={ updatePassword }
+						value={ password }
+						placeholder={ __( 'Use a secure password' ) }
+						type="text"
+						id={ `editor-post-visibility__password-input-${ instanceId }` }
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+						maxLength={ 255 }
+					/>
 				) }
 			</fieldset>
 			<ConfirmDialog

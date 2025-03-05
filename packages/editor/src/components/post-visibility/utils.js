@@ -14,6 +14,6 @@ export const visibilityOptions = {
 	},
 	password: {
 		label: __( 'Password protected' ),
-		info: __( 'Only those with the password can view this post.' ),
+		info: __( 'Only visible to those who know the password.' ),
 	},
 };

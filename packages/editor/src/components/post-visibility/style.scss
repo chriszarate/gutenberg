@@ -18,10 +18,4 @@
 	.editor-post-visibility__choice:last-child .editor-post-visibility__info {
 		margin-bottom: 0;
 	}
-
-	.editor-post-visibility__password .editor-post-visibility__password-input[type="text"] {
-		@include input-control;
-		margin-left: $grid-unit * 4;
-		width: calc(100% - #{$grid-unit * 4});
-	}
 }
