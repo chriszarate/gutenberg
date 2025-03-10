@@ -1723,11 +1723,10 @@ export const __experimentalGetDefaultTemplateTypes = createRegistrySelector(
 			{
 				since: '6.8',
 				alternative:
-					"select('core/core-data').getEntityRecord( 'root', '__unstableBase' )?.default_template_types",
+					"select('core/core-data').getCurrentTheme()?.default_template_types",
 			}
 		);
-		return select( coreStore ).getEntityRecord( 'root', '__unstableBase' )
-			?.default_template_types;
+		return select( coreStore ).getCurrentTheme()?.default_template_types;
 	}
 );
 
@@ -1746,12 +1745,12 @@ export const __experimentalGetDefaultTemplatePartAreas = createRegistrySelector(
 				{
 					since: '6.8',
 					alternative:
-						"select('core/core-data').getEntityRecord( 'root', '__unstableBase' )?.default_template_part_areas",
+						"select('core/core-data').getCurrentTheme()?.default_template_part_areas",
 				}
 			);
 
 			const areas =
-				select( coreStore ).getEntityRecord( 'root', '__unstableBase' )
+				select( coreStore ).getCurrentTheme()
 					?.default_template_part_areas || [];
 
 			return areas.map( ( item ) => {
@@ -1777,10 +1776,8 @@ export const __experimentalGetDefaultTemplateType = createRegistrySelector(
 					since: '6.8',
 				}
 			);
-			const templateTypes = select( coreStore ).getEntityRecord(
-				'root',
-				'__unstableBase'
-			)?.default_template_types;
+			const templateTypes =
+				select( coreStore ).getCurrentTheme()?.default_template_types;
 
 			if ( ! templateTypes ) {
 				return EMPTY_OBJECT;
@@ -1813,13 +1810,11 @@ export const __experimentalGetTemplateInfo = createRegistrySelector(
 				return EMPTY_OBJECT;
 			}
 
-			const templateTypes =
-				select( coreStore ).getEntityRecord( 'root', '__unstableBase' )
-					?.default_template_types || [];
+			const currentTheme = select( coreStore ).getCurrentTheme();
 
+			const templateTypes = currentTheme?.default_template_types || [];
 			const templateAreas =
-				select( coreStore ).getEntityRecord( 'root', '__unstableBase' )
-					?.default_template_part_areas || [];
+				currentTheme?.default_template_part_areas || [];
 
 			return getTemplateInfo( {
 				template,

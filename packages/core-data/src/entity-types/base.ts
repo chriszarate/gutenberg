@@ -65,16 +65,6 @@ declare module './base-entity-records' {
 			 * Site URL.
 			 */
 			url: string;
-
-			/**
-			 * Default template part areas.
-			 */
-			default_template_part_areas?: Array< TemplatePartArea >;
-
-			/**
-			 * Default template types
-			 */
-			default_template_types?: Array< TemplateType >;
 		}
 	}
 }
