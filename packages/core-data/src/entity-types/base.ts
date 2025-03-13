@@ -65,6 +65,21 @@ declare module './base-entity-records' {
 			 * Site URL.
 			 */
 			url: string;
+
+			/**
+			 * Page for posts.
+			 */
+			page_for_posts: number;
+
+			/**
+			 * Page on front.
+			 */
+			page_on_front: number;
+
+			/**
+			 * Show on front.
+			 */
+			show_on_front: string;
 		}
 	}
 }
