@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 30.14.1 (2025-04-01)
+
 ### Bug Fixes
 
 -   Fix: `--blocks-manifest` CLI flag doesn't work when the directory name has space ([#69766](https://github.com/WordPress/gutenberg/pull/69766)).
