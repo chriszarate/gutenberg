@@ -16,6 +16,7 @@ on:
             - 'packages/**/*.php'
             - '!packages/block-library/**'
             - '!packages/block-serialization-default-parser/**'
+            - '!packages/widgets/**'
             - '!packages/e2e-tests/**'
 
 # Disable permissions for all available scopes by default.
