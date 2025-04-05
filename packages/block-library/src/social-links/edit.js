@@ -64,9 +64,15 @@ export function SocialLinksEdit( props ) {
 		size,
 	} = attributes;
 
-	const hasSelectedChild = useSelect(
-		( select ) =>
-			select( blockEditorStore ).hasSelectedInnerBlock( clientId ),
+	const { hasSocialIcons, hasSelectedChild } = useSelect(
+		( select ) => {
+			const { getBlockCount, hasSelectedInnerBlock } =
+				select( blockEditorStore );
+			return {
+				hasSocialIcons: getBlockCount( clientId ) > 0,
+				hasSelectedChild: hasSelectedInnerBlock( clientId ),
+			};
+		},
 		[ clientId ]
 	);
 
@@ -96,16 +102,6 @@ export function SocialLinksEdit( props ) {
 		}
 	}, [ logosOnly ] );
 
-	const SocialPlaceholder = (
-		<li className="wp-block-social-links__social-placeholder">
-			<div className="wp-block-social-links__social-placeholder-icons">
-				<div className="wp-social-link wp-social-link-twitter"></div>
-				<div className="wp-social-link wp-social-link-facebook"></div>
-				<div className="wp-social-link wp-social-link-instagram"></div>
-			</div>
-		</li>
-	);
-
 	// Fallback color values are used maintain selections in case switching
 	// themes and named colors in palette do not match.
 	const className = clsx( size, {
@@ -117,11 +113,13 @@ export function SocialLinksEdit( props ) {
 
 	const blockProps = useBlockProps( { className } );
 	const innerBlocksProps = useInnerBlocksProps( blockProps, {
-		placeholder: ! isSelected && SocialPlaceholder,
 		templateLock: false,
 		orientation: attributes.layout?.orientation ?? 'horizontal',
 		__experimentalAppenderTagName: 'li',
-		renderAppender: hasAnySelected && InnerBlocks.ButtonBlockAppender,
+		renderAppender:
+			! hasSocialIcons || hasAnySelected
+				? InnerBlocks.ButtonBlockAppender
+				: undefined,
 	} );
 
 	const POPOVER_PROPS = {
