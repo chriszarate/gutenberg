@@ -16,21 +16,6 @@
 	padding: 0;
 }
 
-// Selected placeholder state.
-.wp-block-social-links .wp-block-social-links__social-prompt {
-	min-height: $button-size-small;
-	list-style: none;
-
-	// Show as block UI.
-	font-family: $default-font;
-	font-size: $default-font-size;
-	line-height: $button-size-small;
-	margin-top: auto;
-	margin-bottom: auto;
-	cursor: default;
-	padding-right: $grid-unit-10;
-}
-
 // Center flex items. This has an equivalent in style.scss.
 .wp-block[data-align="center"] > .wp-block-social-links,
 .wp-block.wp-block-social-links.aligncenter {
