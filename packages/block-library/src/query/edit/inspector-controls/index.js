@@ -5,11 +5,12 @@ import {
 	TextControl,
 	SelectControl,
 	RangeControl,
-	__experimentalToggleGroupControl as ToggleGroupControl,
-	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 	Notice,
+	__experimentalVStack as VStack,
 	__experimentalToolsPanel as ToolsPanel,
 	__experimentalToolsPanelItem as ToolsPanelItem,
+	__experimentalToggleGroupControl as ToggleGroupControl,
+	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
@@ -113,8 +114,7 @@ export default function QueryInspectorControls( props ) {
 	}, [ querySearch, onChangeDebounced ] );
 
 	const orderByOptions = useOrderByOptions( postType );
-	const showInheritControl =
-		! isSingular && isControlAllowed( allowedControls, 'inherit' );
+	const showInheritControl = isControlAllowed( allowedControls, 'inherit' );
 	const showPostTypeControl =
 		! inherit && isControlAllowed( allowedControls, 'postType' );
 	const postTypeControlLabel = __( 'Post type' );
@@ -185,6 +185,10 @@ export default function QueryInspectorControls( props ) {
 	const showDisplayPanel =
 		showPostCountControl || showOffSetControl || showPagesControl;
 
+	// The block cannot inherit a default WordPress query in singular content (e.g., post, page, 404, blank).
+	// Warn users but still permit this type of query for exceptional cases in Classic and Hybrid themes.
+	const hasInheritanceWarning = isSingular && inherit;
+
 	return (
 		<>
 			{ showSettingsPanel && (
@@ -208,36 +212,48 @@ export default function QueryInspectorControls( props ) {
 							onDeselect={ () => setQuery( { inherit: true } ) }
 							isShownByDefault
 						>
-							<ToggleGroupControl
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-								label={ __( 'Query type' ) }
-								isBlock
-								onChange={ ( value ) => {
-									setQuery( {
-										inherit: value === 'default',
-									} );
-								} }
-								help={
-									inherit
-										? __(
-												'Display a list of posts or custom post types based on the current template.'
-										  )
-										: __(
-												'Display a list of posts or custom post types based on specific criteria.'
-										  )
-								}
-								value={ !! inherit ? 'default' : 'custom' }
-							>
-								<ToggleGroupControlOption
-									value="default"
-									label={ __( 'Default' ) }
-								/>
-								<ToggleGroupControlOption
-									value="custom"
-									label={ __( 'Custom' ) }
-								/>
-							</ToggleGroupControl>
+							<VStack spacing={ 4 }>
+								<ToggleGroupControl
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+									label={ __( 'Query type' ) }
+									isBlock
+									onChange={ ( value ) => {
+										setQuery( {
+											inherit: value === 'default',
+										} );
+									} }
+									help={
+										inherit
+											? __(
+													'Display a list of posts or custom post types based on the current template.'
+											  )
+											: __(
+													'Display a list of posts or custom post types based on specific criteria.'
+											  )
+									}
+									value={ !! inherit ? 'default' : 'custom' }
+								>
+									<ToggleGroupControlOption
+										value="default"
+										label={ __( 'Default' ) }
+									/>
+									<ToggleGroupControlOption
+										value="custom"
+										label={ __( 'Custom' ) }
+									/>
+								</ToggleGroupControl>
+								{ hasInheritanceWarning && (
+									<Notice
+										status="warning"
+										isDismissible={ false }
+									>
+										{ __(
+											'Cannot inherit the current template query when placed inside the singular content (e.g., post, page, 404, blank).'
+										) }
+									</Notice>
+								) }
+							</VStack>
 						</ToolsPanelItem>
 					) }
 

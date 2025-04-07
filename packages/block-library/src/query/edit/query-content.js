@@ -101,21 +101,15 @@ export default function QueryContent( {
 		} else if ( ! query.perPage && postsPerPage ) {
 			newQuery.perPage = postsPerPage;
 		}
-		// We need to reset the `inherit` value if in a singular template, as queries
-		// are not inherited when in singular content (e.g. post, page, 404, blank).
-		if ( isSingular && query.inherit ) {
-			newQuery.inherit = false;
-		}
+
 		if ( !! Object.keys( newQuery ).length ) {
 			__unstableMarkNextChangeAsNotPersistent();
 			updateQuery( newQuery );
 		}
 	}, [
 		query.perPage,
-		query.inherit,
-		postsPerPage,
 		inherit,
-		isSingular,
+		postsPerPage,
 		__unstableMarkNextChangeAsNotPersistent,
 		updateQuery,
 	] );
