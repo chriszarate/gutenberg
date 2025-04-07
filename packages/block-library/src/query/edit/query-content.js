@@ -38,7 +38,6 @@ export default function QueryContent( {
 	const {
 		queryId,
 		query,
-		displayLayout,
 		enhancedPagination,
 		tagName: TagName = 'div',
 		query: { inherit } = {},
@@ -126,10 +125,6 @@ export default function QueryContent( {
 		__unstableMarkNextChangeAsNotPersistent,
 		setAttributes,
 	] );
-	const updateDisplayLayout = ( newDisplayLayout ) =>
-		setAttributes( {
-			displayLayout: { ...displayLayout, ...newDisplayLayout },
-		} );
 
 	return (
 		<>
@@ -143,7 +138,6 @@ export default function QueryContent( {
 					name={ name }
 					attributes={ attributes }
 					setQuery={ updateQuery }
-					setDisplayLayout={ updateDisplayLayout }
 					setAttributes={ setAttributes }
 					clientId={ clientId }
 					isSingular={ isSingular }

@@ -4,7 +4,6 @@
 import {
 	TextControl,
 	SelectControl,
-	RangeControl,
 	Notice,
 	__experimentalVStack as VStack,
 	__experimentalToolsPanel as ToolsPanel,
@@ -41,8 +40,8 @@ import {
 import { useToolsPanelDropdownMenuProps } from '../../../utils/hooks';
 
 export default function QueryInspectorControls( props ) {
-	const { attributes, setQuery, setDisplayLayout, isSingular } = props;
-	const { query, displayLayout } = attributes;
+	const { attributes, setQuery, isSingular } = props;
+	const { query } = attributes;
 	const {
 		order,
 		orderBy,
@@ -121,7 +120,6 @@ export default function QueryInspectorControls( props ) {
 	const postTypeControlHelp = __(
 		'Select the type of content to display: posts, pages, or custom post types.'
 	);
-	const showColumnsControl = false;
 	const showOrderControl =
 		! inherit && isControlAllowed( allowedControls, 'order' );
 	const showStickyControl =
@@ -131,7 +129,6 @@ export default function QueryInspectorControls( props ) {
 	const showSettingsPanel =
 		showInheritControl ||
 		showPostTypeControl ||
-		showColumnsControl ||
 		showOrderControl ||
 		showStickyControl;
 	const showTaxControl =
@@ -295,43 +292,6 @@ export default function QueryInspectorControls( props ) {
 									) }
 								</ToggleGroupControl>
 							) }
-						</ToolsPanelItem>
-					) }
-
-					{ showColumnsControl && (
-						<ToolsPanelItem
-							hasValue={ () => displayLayout?.columns !== 2 }
-							label={ __( 'Columns' ) }
-							onDeselect={ () =>
-								setDisplayLayout( { columns: 2 } )
-							}
-							isShownByDefault
-						>
-							<>
-								<RangeControl
-									__nextHasNoMarginBottom
-									__next40pxDefaultSize
-									label={ __( 'Columns' ) }
-									value={ displayLayout.columns }
-									onChange={ ( value ) =>
-										setDisplayLayout( {
-											columns: value,
-										} )
-									}
-									min={ 2 }
-									max={ Math.max( 6, displayLayout.columns ) }
-								/>
-								{ displayLayout.columns > 6 && (
-									<Notice
-										status="warning"
-										isDismissible={ false }
-									>
-										{ __(
-											'This column count exceeds the recommended amount and may cause visual breakage.'
-										) }
-									</Notice>
-								) }
-							</>
 						</ToolsPanelItem>
 					) }
 
