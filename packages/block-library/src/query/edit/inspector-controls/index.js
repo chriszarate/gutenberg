@@ -15,7 +15,7 @@ import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { __ } from '@wordpress/i18n';
 import { debounce } from '@wordpress/compose';
-import { useEffect, useState, useCallback } from '@wordpress/element';
+import { useState, useMemo } from '@wordpress/element';
 
 /**
  * Internal dependencies
@@ -99,18 +99,11 @@ export default function QueryInspectorControls( props ) {
 		setQuery( updateQuery );
 	};
 	const [ querySearch, setQuerySearch ] = useState( query.search );
-	const onChangeDebounced = useCallback(
-		debounce( () => {
-			if ( query.search !== querySearch ) {
-				setQuery( { search: querySearch } );
-			}
-		}, 250 ),
-		[ querySearch, query.search ]
-	);
-	useEffect( () => {
-		onChangeDebounced();
-		return onChangeDebounced.cancel;
-	}, [ querySearch, onChangeDebounced ] );
+	const debouncedQuerySearch = useMemo( () => {
+		return debounce( ( newQuerySearch ) => {
+			setQuery( { search: newQuerySearch } );
+		}, 250 );
+	}, [ setQuery ] );
 
 	const orderByOptions = useOrderByOptions( postType );
 	const showInheritControl = isControlAllowed( allowedControls, 'inherit' );
@@ -419,14 +412,20 @@ export default function QueryInspectorControls( props ) {
 						<ToolsPanelItem
 							hasValue={ () => !! querySearch }
 							label={ __( 'Keyword' ) }
-							onDeselect={ () => setQuerySearch( '' ) }
+							onDeselect={ () => {
+								setQuery( { search: '' } );
+								setQuerySearch( '' );
+							} }
 						>
 							<TextControl
 								__nextHasNoMarginBottom
 								__next40pxDefaultSize
 								label={ __( 'Keyword' ) }
 								value={ querySearch }
-								onChange={ setQuerySearch }
+								onChange={ ( newQuerySearch ) => {
+									debouncedQuerySearch( newQuerySearch );
+									setQuerySearch( newQuerySearch );
+								} }
 							/>
 						</ToolsPanelItem>
 					) }
