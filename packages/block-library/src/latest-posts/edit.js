@@ -79,6 +79,10 @@ function getFeaturedImageDetails( post, size ) {
 	};
 }
 
+function getCurrentAuthor( post ) {
+	return post._embedded?.author?.[ 0 ];
+}
+
 export default function LatestPostsEdit( { attributes, setAttributes } ) {
 	const instanceId = useInstanceId( LatestPostsEdit );
 	const dropdownMenuProps = useToolsPanelDropdownMenuProps();
@@ -125,7 +129,7 @@ export default function LatestPostsEdit( { attributes, setAttributes } ) {
 					order,
 					orderby: orderBy,
 					per_page: postsToShow,
-					_embed: 'wp:featuredmedia',
+					_embed: 'author,wp:featuredmedia',
 					ignore_sticky: true,
 				} ).filter( ( [ , value ] ) => typeof value !== 'undefined' )
 			);
@@ -555,9 +559,7 @@ export default function LatestPostsEdit( { attributes, setAttributes } ) {
 				{ displayPosts.map( ( post ) => {
 					const titleTrimmed = post.title.rendered.trim();
 					let excerpt = post.excerpt.rendered;
-					const currentAuthor = authorList?.find(
-						( author ) => author.id === post.author
-					);
+					const currentAuthor = getCurrentAuthor( post );
 
 					const excerptElement = document.createElement( 'div' );
 					excerptElement.innerHTML = excerpt;
