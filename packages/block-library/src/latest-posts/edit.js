@@ -60,6 +60,7 @@ import { useToolsPanelDropdownMenuProps } from '../utils/hooks';
  */
 const CATEGORIES_LIST_QUERY = {
 	per_page: -1,
+	_fields: 'id,name',
 	context: 'view',
 };
 const USERS_LIST_QUERY = {
