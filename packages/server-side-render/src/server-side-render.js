@@ -213,12 +213,12 @@ export default function ServerSideRender( props ) {
 
 	const hasResponse = !! response;
 	const hasEmptyResponse = response === '';
-	const hasError = response?.error;
+	const hasError = !! response?.error;
 
 	if ( isLoading ) {
 		return (
 			<LoadingResponsePlaceholder { ...props } showLoader={ showLoader }>
-				{ hasResponse && (
+				{ hasResponse && ! hasError && (
 					<RawHTML className={ className }>{ response }</RawHTML>
 				) }
 			</LoadingResponsePlaceholder>
