@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 29.9.0 (2025-05-07)
+
 ### Enhancement
 
 -   `Guide`: Make next and previous button text customizable ([#69907](https://github.com/WordPress/gutenberg/pull/69907)).
