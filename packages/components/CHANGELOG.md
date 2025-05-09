@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Enhancement
+
+-   `Snackbar`: Add support to open links in a new tab ([#69905](https://github.com/WordPress/gutenberg/pull/69905)).
+
 ## 29.9.0 (2025-05-07)
 
 ### Enhancement
