@@ -72,6 +72,7 @@ export function SuggestionsList<
 
 		const transformedSuggestion = displayTransform( suggestion );
 		const indexOfMatch = transformedSuggestion
+			.normalize( 'NFKC' )
 			.toLocaleLowerCase()
 			.indexOf( matchText );
 

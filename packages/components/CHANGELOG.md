@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Enhancement
+
+-   `ComboboxControl`: Handle Unicode characters when matching values ([#70180](https://github.com/WordPress/gutenberg/pull/70180)).
+
 ## 29.10.0 (2025-05-22)
 
 ### Enhancement
