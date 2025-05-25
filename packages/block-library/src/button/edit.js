@@ -388,23 +388,18 @@ function ButtonEdit( props ) {
 							} }
 						/>
 					) }
-					{ ! isURLSet && isLinkTag && ! lockUrlControls && (
+					{ isLinkTag && ! lockUrlControls && (
 						<ToolbarButton
 							name="link"
-							icon={ link }
-							title={ __( 'Link' ) }
-							shortcut={ displayShortcut.primary( 'k' ) }
-							onClick={ startEditing }
-						/>
-					) }
-					{ isURLSet && isLinkTag && ! lockUrlControls && (
-						<ToolbarButton
-							name="link"
-							icon={ linkOff }
-							title={ __( 'Unlink' ) }
-							shortcut={ displayShortcut.primaryShift( 'k' ) }
-							onClick={ unlink }
-							isActive
+							icon={ ! isURLSet ? link : linkOff }
+							title={ ! isURLSet ? __( 'Link' ) : __( 'Unlink' ) }
+							shortcut={
+								! isURLSet
+									? displayShortcut.primary( 'k' )
+									: displayShortcut.primaryShift( 'k' )
+							}
+							onClick={ ! isURLSet ? startEditing : unlink }
+							isActive={ isURLSet }
 						/>
 					) }
 				</BlockControls>
