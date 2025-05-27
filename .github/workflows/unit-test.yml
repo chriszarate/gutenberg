@@ -28,7 +28,7 @@ jobs:
         name: JavaScript (Node.js ${{ matrix.node }}) ${{ matrix.shard }}
         runs-on: ubuntu-latest
         permissions:
-          contents: read
+            contents: read
         if: ${{ github.repository == 'WordPress/gutenberg' || github.event_name == 'pull_request' }}
         strategy:
             fail-fast: false
@@ -73,7 +73,7 @@ jobs:
         name: JavaScript Date Tests (Node.js ${{ matrix.node }})
         runs-on: ubuntu-latest
         permissions:
-          contents: read
+            contents: read
         if: ${{ github.repository == 'WordPress/gutenberg' || github.event_name == 'pull_request' }}
         strategy:
             fail-fast: false
@@ -138,7 +138,7 @@ jobs:
         name: Build JavaScript assets for PHP unit tests
         runs-on: ubuntu-latest
         permissions:
-          contents: read
+            contents: read
         steps:
             - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
               with:
@@ -164,7 +164,7 @@ jobs:
         needs: [compute-previous-wordpress-version, build-assets]
         runs-on: ubuntu-latest
         permissions:
-          contents: read
+            contents: read
         timeout-minutes: 20
         if: ${{ github.repository == 'WordPress/gutenberg' || github.event_name == 'pull_request' }}
         strategy:
@@ -299,7 +299,7 @@ jobs:
         name: PHP coding standards
         runs-on: ubuntu-latest
         permissions:
-          contents: read
+            contents: read
         timeout-minutes: 20
         if: ${{ github.repository == 'WordPress/gutenberg' || github.event_name == 'pull_request' }}
 
@@ -374,7 +374,7 @@ jobs:
         name: Mobile
         runs-on: ubuntu-latest
         permissions:
-          contents: read
+            contents: read
         if: ${{ github.repository == 'WordPress/gutenberg' || github.event_name == 'pull_request' }}
 
         steps:
