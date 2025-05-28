@@ -8,6 +8,10 @@
 -   `Toolbar`: Adjust colors for dark mode support ([#69278](https://github.com/WordPress/gutenberg/pull/69278)).
 -   `DropZone`: Allow overriding the default icon ([#70236](https://github.com/WordPress/gutenberg/pull/70236)).
 
+### Bug Fixes
+
+-   `FormTokenField`: Fix filtering with full-width string ([#70232](https://github.com/WordPress/gutenberg/pull/70232)).
+
 ### Internal
 
 -   Expose `normalizeTextString` method as private API ([#70178](https://github.com/WordPress/gutenberg/pull/70178)).

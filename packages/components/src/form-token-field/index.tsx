@@ -513,7 +513,7 @@ export function FormTokenField( props: FormTokenFieldProps ) {
 				( suggestion ) => ! normalizedValue.includes( suggestion )
 			);
 		} else {
-			match = match.toLocaleLowerCase();
+			match = match.normalize( 'NFKC' ).toLocaleLowerCase();
 
 			_suggestions.forEach( ( suggestion ) => {
 				const index = suggestion
