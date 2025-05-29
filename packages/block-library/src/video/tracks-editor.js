@@ -52,7 +52,7 @@ function TrackList( { tracks, onEditPress } ) {
 	const content = tracks.map( ( track, index ) => {
 		return (
 			<HStack
-				key={ index }
+				key={ track.src }
 				className="block-library-video-tracks-editor__track-list-track"
 			>
 				<span>{ track.label }</span>
