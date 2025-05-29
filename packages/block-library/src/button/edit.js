@@ -10,6 +10,7 @@ import { NEW_TAB_TARGET, NOFOLLOW_REL } from './constants';
 import { getUpdatedLinkAttributes } from './get-updated-link-attributes';
 import removeAnchorTag from '../utils/remove-anchor-tag';
 import { useToolsPanelDropdownMenuProps } from '../utils/hooks';
+import { unlock } from '../lock-unlock';
 
 /**
  * WordPress dependencies
@@ -47,6 +48,7 @@ import {
 	useBlockEditingMode,
 	getTypographyClassesAndStyles as useTypographyProps,
 	useSettings,
+	privateApis as blockEditorPrivateApis,
 } from '@wordpress/block-editor';
 import { displayShortcut, isKeyboardEvent, ENTER } from '@wordpress/keycodes';
 import { link, linkOff } from '@wordpress/icons';
@@ -58,6 +60,8 @@ import {
 } from '@wordpress/blocks';
 import { useMergeRefs, useRefEffect } from '@wordpress/compose';
 import { useSelect, useDispatch } from '@wordpress/data';
+
+const { HTMLElementControl } = unlock( blockEditorPrivateApis );
 
 const LINK_SETTINGS = [
 	...LinkControl.DEFAULT_LINK_SETTINGS,
@@ -456,6 +460,17 @@ function ButtonEdit( props ) {
 				/>
 			</InspectorControls>
 			<InspectorControls group="advanced">
+				<HTMLElementControl
+					tagName={ tagName }
+					onChange={ ( value ) =>
+						setAttributes( { tagName: value } )
+					}
+					clientId={ clientId }
+					options={ [
+						{ label: __( 'Default (<a>)' ), value: 'a' },
+						{ label: '<button>', value: 'button' },
+					] }
+				/>
 				{ isLinkTag && (
 					<TextControl
 						__next40pxDefaultSize
