@@ -465,7 +465,6 @@ function ButtonEdit( props ) {
 					onChange={ ( value ) =>
 						setAttributes( { tagName: value } )
 					}
-					clientId={ clientId }
 					options={ [
 						{ label: __( 'Default (<a>)' ), value: 'a' },
 						{ label: '<button>', value: 'button' },

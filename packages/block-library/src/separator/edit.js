@@ -24,11 +24,7 @@ import { unlock } from '../lock-unlock';
 
 const { HTMLElementControl } = unlock( blockEditorPrivateApis );
 
-export default function SeparatorEdit( {
-	attributes,
-	setAttributes,
-	clientId,
-} ) {
+export default function SeparatorEdit( { attributes, setAttributes } ) {
 	const { backgroundColor, opacity, style, tagName } = attributes;
 	const colorProps = useColorProps( attributes );
 	const currentColor = colorProps?.style?.backgroundColor;
@@ -64,7 +60,6 @@ export default function SeparatorEdit( {
 					onChange={ ( value ) =>
 						setAttributes( { tagName: value } )
 					}
-					clientId={ clientId }
 					options={ [
 						{ label: __( 'Default (<hr>)' ), value: 'hr' },
 						{ label: '<div>', value: 'div' },
