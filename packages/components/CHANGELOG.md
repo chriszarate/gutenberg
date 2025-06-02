@@ -15,6 +15,7 @@
 ### Internal
 
 -   Expose `normalizeTextString` method as private API ([#70178](https://github.com/WordPress/gutenberg/pull/70178)).
+-   Mark `withIgnoreIMEEvents()` function as private API ([#70056](https://github.com/WordPress/gutenberg/pull/70056)).
 
 ## 29.10.0 (2025-05-22)
 
