@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 6.1.0 (2025-06-04)
+
 ## 6.0.0 (2025-05-22)
 
 ### Breaking Changes
