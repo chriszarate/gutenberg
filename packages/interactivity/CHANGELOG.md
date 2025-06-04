@@ -4,6 +4,10 @@
 
 ## 6.25.0 (2025-06-04)
 
+### Bug Fixes
+
+-   Fix `store()` types to support typing it without passing a store part. ([#70296](https://github.com/WordPress/gutenberg/pull/70296))
+
 ## 6.24.0 (2025-05-22)
 
 ## 6.23.0 (2025-05-07)
