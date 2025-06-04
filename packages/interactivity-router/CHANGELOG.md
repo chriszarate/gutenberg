@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+-   Prevents duplicating nested router regions after a client-side navigation. ([#70302](https://github.com/WordPress/gutenberg/pull/70302))
+
 ## 2.25.0 (2025-06-04)
 
 ## 2.24.0 (2025-05-22)
