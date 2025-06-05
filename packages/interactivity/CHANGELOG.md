@@ -8,6 +8,7 @@
 
 -   Fix `store()` types to support typing it without passing a store part. ([#70296](https://github.com/WordPress/gutenberg/pull/70296))
 -   Fix captured errors in `withScope` for passed generators. ([#70303](https://github.com/WordPress/gutenberg/pull/70303))
+-   Fix parsing of HTML comments without siblings. ([#70304](https://github.com/WordPress/gutenberg/pull/70304))
 
 ## 6.24.0 (2025-05-22)
 
