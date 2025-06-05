@@ -19,7 +19,7 @@ const {
 const regionAttr = `data-${ directivePrefix }-router-region`;
 const interactiveAttr = `data-${ directivePrefix }-interactive`;
 
-interface NavigateOptions {
+export interface NavigateOptions {
 	force?: boolean;
 	html?: string;
 	replace?: boolean;
@@ -28,7 +28,7 @@ interface NavigateOptions {
 	screenReaderAnnouncement?: boolean;
 }
 
-interface PrefetchOptions {
+export interface PrefetchOptions {
 	force?: boolean;
 	html?: string;
 }
