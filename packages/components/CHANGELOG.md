@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Internal
+
+-   `FormFileUpload`: Remove temporary fix for selecting .heic file in Chromium browsers ([#70383](https://github.com/WordPress/gutenberg/pull/70383)).
+
 ## 29.11.0 (2025-06-04)
 
 ### Enhancement
