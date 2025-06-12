@@ -55,6 +55,19 @@ _Returns_
 
 -   `import('./types').ConnectDoc`: Promise that resolves when the connection is established.
 
+### createWebSocketConnection
+
+Function that creates a new WebSocket Connection.
+
+_Parameters_
+
+-   _config_ `Object`: The object ID.
+-   _config.password_ `string`:
+
+_Returns_
+
+-   `import('./types').ConnectDoc`: Promise that resolves when the connection is established.
+
 ### currentEncodingVersion
 
 Undocumented declaration.

@@ -2,10 +2,11 @@
  * Internal dependencies
  */
 import { createSyncProvider } from './provider';
+import { createWebSocketConnection } from './create-websocket-connection';
 export { connectIndexDb } from './connect-indexdb';
 export { createWebRTCConnection } from './create-webrtc-connection';
+export { createWebSocketConnection } from './create-websocket-connection';
 export { createSyncProvider } from './provider';
-import { createWebRTCConnection } from './create-webrtc-connection';
 // import { connectIndexDb } from './connect-indexdb';
 
 /**
@@ -64,12 +65,7 @@ export function getSyncProvider() {
 	if ( ! syncProvider ) {
 		// @ts-ignore
 		const connectionProvider = window?.__experimentalEnableWebrtcSync
-			? createWebRTCConnection( {
-					signaling: [
-						// @ts-ignore
-						window?.wp?.ajax?.settings?.url,
-						//'ws://localhost:4444',
-					],
+			? createWebSocketConnection( {
 					// @ts-ignore
 					password: window?.__experimentalCollaborativeEditingSecret,
 			  } )

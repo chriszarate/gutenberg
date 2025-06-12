@@ -39,6 +39,7 @@
 		"y-indexeddb": "^9.0.11",
 		"y-protocols": "^1.0.5",
 		"y-webrtc": "^10.2.5",
+		"y-websocket": "3.0.0",
 		"yjs": "^13.6.6"
 	},
 	"publishConfig": {
