@@ -24,7 +24,7 @@ export function createWebSocketConnection( { password } ) {
 		/** @type {import("yjs").Doc} */ doc
 	) {
 		const roomName = `${ objectType }-${ objectId }`;
-		const serverUrl = 'ws://localhost:1234';
+		const serverUrl = 'ws://localhost:3000/_ws/';
 		try {
 			new WebsocketProvider( serverUrl, roomName, doc, {
 				// @ts-ignore
