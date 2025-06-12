@@ -152,6 +152,18 @@ function gutenberg_initialize_experiments_settings() {
 	);
 
 	add_settings_field(
+		'gutenberg-sync-websocket-collaboration',
+		__( 'Collaboration: Add real-time collaborative editing using WebSockets', 'gutenberg' ),
+		'gutenberg_display_experiment_field',
+		'gutenberg-experiments',
+		'gutenberg_experiments_section',
+		array(
+			'label' => __( 'Enables real-time collaborative editing using WebSockets.', 'gutenberg' ),
+			'id'    => 'gutenberg-sync-websocket-collaboration',
+		)
+	);
+
+	add_settings_field(
 		'gutenberg-color-randomizer',
 		__( 'Color randomizer', 'gutenberg' ),
 		'gutenberg_display_experiment_field',

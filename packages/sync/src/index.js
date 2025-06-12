@@ -64,7 +64,7 @@ let syncProvider;
 export function getSyncProvider() {
 	if ( ! syncProvider ) {
 		// @ts-ignore
-		const connectionProvider = window?.__experimentalEnableWebrtcSync
+		const connectionProvider = window?.__experimentalEnableWebSocketSync
 			? createWebSocketConnection( {
 					// @ts-ignore
 					password: window?.__experimentalCollaborativeEditingSecret,
