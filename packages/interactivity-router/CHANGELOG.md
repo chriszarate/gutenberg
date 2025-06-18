@@ -6,6 +6,7 @@
 
 -   Export `NavigateOptions` and `PrefetchOptions` types. ([#70315](https://github.com/WordPress/gutenberg/pull/70315))
 -   Support new styles and script modules on client-side navigation, including a new full-page client-side navigation mode. ([#70353](https://github.com/WordPress/gutenberg/pull/70353))
+-   Introduce `AsyncAction` and `TypeYield` type helpers. ([#70422](https://github.com/WordPress/gutenberg/pull/70422))
 
 ### Bug Fixes
 

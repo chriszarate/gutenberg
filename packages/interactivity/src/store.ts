@@ -84,6 +84,9 @@ interface StoreOptions {
 	lock?: boolean | string;
 }
 
+export type AsyncAction< T > = Generator< any, T, unknown >;
+export type TypeYield< T extends ( ...args: any[] ) => Promise< any > > =
+	Awaited< ReturnType< T > >;
 type Prettify< T > = { [ K in keyof T ]: T[ K ] } & {};
 type DeepPartial< T > = T extends object
 	? { [ P in keyof T ]?: DeepPartial< T[ P ] > }
