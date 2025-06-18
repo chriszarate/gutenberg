@@ -33,7 +33,7 @@ const initialImportMap = initialImportMapElement
 const resolvedScriptModules = new Set< string >();
 
 /**
- * Mark the specified module as natively resolved.
+ * Marks the specified module as natively resolved.
  * @param url Script module URL.
  */
 export const markScriptModuleAsResolved = ( url: string ) => {
@@ -41,7 +41,7 @@ export const markScriptModuleAsResolved = ( url: string ) => {
 };
 
 /**
- * Resolve and fetch modules present in the passed document, using the
+ * Resolves and fetches modules present in the passed document, using the
  * document's import map to resolve them.
  *
  * @param doc Document containing the modules to preload.
@@ -76,7 +76,7 @@ export const preloadScriptModules = ( doc: Document ) => {
 };
 
 /**
- * Import modules respresented by the passed `ScriptModuleLoad` instances.
+ * Imports modules respresented by the passed `ScriptModuleLoad` instances.
  *
  * @param modules Array of `MoudleLoad` instances.
  * @return Promise that resolves once all modules are imported.

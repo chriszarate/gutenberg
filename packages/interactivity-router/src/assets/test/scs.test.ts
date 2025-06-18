@@ -4,8 +4,9 @@
 import { shortestCommonSupersequence } from '../scs';
 
 /**
- * Check the passed array is a contained sequence of the given
+ * Checks if the passed array is a contained sequence of the given
  * supersequence.
+ *
  * @param arr      Array.
  * @param superseq Supersequence.
  * @param isEqual  Optional comparator.

@@ -1,5 +1,5 @@
 /**
- * Calculate the Shortest Common Supersequence (SCS) of two sequences.
+ * Calculates the Shortest Common Supersequence (SCS) of two sequences.
  *
  * A supersequence is a sequence that contains both input sequences as subsequences.
  * The shortest common supersequence is the shortest possible such sequence.

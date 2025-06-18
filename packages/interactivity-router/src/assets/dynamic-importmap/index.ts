@@ -38,7 +38,7 @@ async function importShim< Module = unknown >( id: string ) {
 }
 
 /**
- * Import the module with the passed ID.
+ * Imports the module with the passed ID.
  *
  * The module is resolved against the internal dynamic import map,
  * extended with the passed import map.
@@ -56,7 +56,7 @@ export async function importWithMap< Module = unknown >(
 }
 
 /**
- * Preload the module with the passed ID along with its dependencies.
+ * Preloads the module with the passed ID along with its dependencies.
  *
  * The module is resolved against the internal dynamic import map,
  * extended with the passed import map.

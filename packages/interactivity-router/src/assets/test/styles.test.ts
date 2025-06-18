@@ -10,8 +10,9 @@ import {
 } from '../styles';
 
 /**
- * Mock the `sheet` property or the for the
+ * Mocks the `sheet` property for the
  * passed HTMLStyleElement or HTMLLinkElement instance.
+ *
  * @param element          Style or Link element.
  * @param params           Values for certain props.
  * @param params.disabled  Value for the `sheet.disabled` prop.
@@ -34,7 +35,8 @@ const mockSheet = (
 };
 
 /**
- * Create an `HTMLStyleElement` instance for testing.
+ * Creates an `HTMLStyleElement` instance for testing.
+ *
  * @param id Value for the `id` attribute.
  * @return An `HTMLStyleElement` instance.
  */
@@ -46,7 +48,8 @@ const createStyleElement = ( id: string ): HTMLStyleElement => {
 };
 
 /**
- * Create an `HTMLLinkElement` instance for testing.
+ * Creates an `HTMLLinkElement` instance for testing.
+ *
  * @param id   Value for the `id` attribute.
  * @param href Value for the `href` attribute.
  * @return An `HTMLLinkElement` instance.

@@ -261,7 +261,7 @@ const baseUrl = document.baseURI;
 const pageBaseUrl = baseUrl;
 
 /**
- * Extend the internal dynamic import map with the passed one.
+ * Extends the internal dynamic import map with the passed one.
  *
  * @param importMapIn         Import map.
  * @param importMapIn.imports Imports declaration.
@@ -279,7 +279,7 @@ export function addImportMap( importMapIn: {
 }
 
 /**
- * Resolve the URL of the passed module ID against the current internal
+ * Resolves the URL of the passed module ID against the current internal
  * dynamic import map.
  *
  * @param id        Module ID.

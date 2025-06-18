@@ -6,7 +6,7 @@ import { shortestCommonSupersequence } from './scs';
 export type StyleElement = HTMLLinkElement | HTMLStyleElement;
 
 /**
- * Compare the passed style or link elements to check if they can be
+ * Compares the passed style or link elements to check if they can be
  * considered equal.
  *
  * @param a `<style>` or `<link>` element.
@@ -17,7 +17,7 @@ const areNodesEqual = ( a: StyleElement, b: StyleElement ): boolean =>
 	a.isEqualNode( b );
 
 /**
- * Normalized the passed style or link element, reverting the changes
+ * Normalizes the passed style or link element, reverting the changes
  * made by {@link prepareStylePromise|`prepareStylePromise`} to the
  * `data-original-media` and `media`.
  *
@@ -48,12 +48,12 @@ export const normalizeMedia = ( element: StyleElement ): StyleElement => {
 };
 
 /**
- * Add the minimun style elements from Y around those in X using a
+ * Adds the minimum style elements from Y around those in X using a
  * shortest common supersequence algorithm, returning a list of
  * promises for all the elements in Y.
  *
- * If X is empty, it appends all the elements in Y to the passed
- * parent element or to `document.head` instead.
+ * If X is empty, it appends all elements in Y to the passed parent
+ * element or to `document.head` instead.
  *
  * The returned promises resolve once the corresponding style element
  * is loaded and ready. Those elements that are also in X return a
@@ -138,7 +138,7 @@ const stylePromiseCache = new WeakMap<
 >();
 
 /**
- * Prepare and return the corresponding `Promise` for the passed style
+ * Prepares and returns the corresponding `Promise` for the passed style
  * element.
  *
  * It returns the cached promise if it exists. Otherwise, constructs
@@ -206,7 +206,7 @@ const prepareStylePromise = (
 const styleSheetCache = new Map< string, Promise< StyleElement >[] >();
 
 /**
- * Prepare all style elements contained in the passed document.
+ * Prepares all style elements contained in the passed document.
  *
  * This function calls {@link updateStylesWithSCS|`updateStylesWithSCS`}
  * to insert only the minimum amount of style elements into the DOM, so
@@ -247,13 +247,13 @@ export const preloadStyles = (
 };
 
 /**
- * Traverse all style elements in the DOM, enabling only those included
+ * Traverses all style elements in the DOM, enabling only those included
  * in the passed list and disabling the others.
  *
  * If the style element has the `data-original-media` attribute, the
  * original `media` value is restored.
  *
- * @param styles List of style elements to apply
+ * @param styles List of style elements to apply.
  */
 export const applyStyles = ( styles: StyleElement[] ) => {
 	window.document

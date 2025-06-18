@@ -289,7 +289,7 @@ function getOrCreateLoad(
 const dynamicImport = ( u: string ) => import( /* webpackIgnore: true */ u );
 
 /**
- * Resolve the passed module URL and fetch the corresponding module
+ * Resolves the passed module URL and fetches the corresponding module
  * and their dependencies, returning a `ModuleLoad` object once all
  * of them have been fetched.
  *
@@ -312,7 +312,7 @@ export async function preloadModule(
 }
 
 /**
- * Import the module represented by the passed `ModuleLoad` instance.
+ * Imports the module represented by the passed `ModuleLoad` instance.
  *
  * @param load The `ModuleLoad` instance representing the module.
  * @return A promise with the imported module.
@@ -329,7 +329,7 @@ export async function importPreloadedModule< Module = unknown >(
 }
 
 /**
- * Import the module represented by the passed module URL.
+ * Imports the module represented by the passed module URL.
  *
  * The module URL and all its dependencies are resolved using the
  * current status of the internal dynamic import map.
