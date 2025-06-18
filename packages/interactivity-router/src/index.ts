@@ -3,6 +3,17 @@
  */
 import { store, privateApis, getConfig } from '@wordpress/interactivity';
 
+/**
+ * Internal dependencies
+ */
+import { preloadStyles, applyStyles, type StyleElement } from './assets/styles';
+import {
+	preloadScriptModules,
+	importScriptModules,
+	markScriptModuleAsResolved,
+	type ScriptModuleLoad,
+} from './assets/script-modules';
+
 const {
 	directivePrefix,
 	getRegionRootFragment,
@@ -18,6 +29,7 @@ const {
 
 const regionAttr = `data-${ directivePrefix }-router-region`;
 const interactiveAttr = `data-${ directivePrefix }-interactive`;
+const regionsSelector = `[${ interactiveAttr }][${ regionAttr }]:not([${ interactiveAttr }] [${ interactiveAttr }])`;
 
 export interface NavigateOptions {
 	force?: boolean;
@@ -38,16 +50,19 @@ interface VdomParams {
 }
 
 interface Page {
+	url: string;
 	regions: Record< string, any >;
+	styles: StyleElement[];
+	scriptModules: ScriptModuleLoad[];
 	title: string;
 	initialData: any;
 }
 
-type RegionsToVdom = ( dom: Document, params?: VdomParams ) => Promise< Page >;
-
-// Check if the navigation mode is full page or region based. The only supported
-// mode for now is 'regionBased'.
-const navigationMode: 'regionBased' = 'regionBased';
+type PreparePage = (
+	url: string,
+	dom: Document,
+	params?: VdomParams
+) => Promise< Page >;
 
 // The cache of visited and prefetched pages, stylesheets and scripts.
 const pages = new Map< string, Promise< Page | false > >();
@@ -59,7 +74,16 @@ const getPagePath = ( url: string ) => {
 	return u.pathname + u.search;
 };
 
-// Fetch a new page and convert it to a static virtual DOM.
+/**
+ * Fetches and prepares a page from a given URL.
+ *
+ * @param url          The URL of the page to fetch.
+ * @param options      Options for the fetch operation.
+ * @param options.html Optional HTML content. If provided, the function will use
+ *                     this instead of fetching from the URL.
+ * @return             A Promise that resolves to the prepared page, or false if
+ *                     there was an error during fetching or preparation.
+ */
 const fetchPage = async ( url: string, { html }: { html: string } ) => {
 	try {
 		if ( ! html ) {
@@ -70,47 +94,71 @@ const fetchPage = async ( url: string, { html }: { html: string } ) => {
 			html = await res.text();
 		}
 		const dom = new window.DOMParser().parseFromString( html, 'text/html' );
-		return regionsToVdom( dom );
+		return await preparePage( url, dom );
 	} catch ( e ) {
 		return false;
 	}
 };
 
-// Return an object with VDOM trees of those HTML regions marked with a
-// `router-region` directive.
-const regionsToVdom: RegionsToVdom = async ( dom, { vdom } = {} ) => {
-	const regions = { body: undefined };
-	if ( navigationMode === 'regionBased' ) {
-		dom.querySelectorAll(
-			`[${ interactiveAttr }][${ regionAttr }]:not([${ interactiveAttr }] [${ interactiveAttr }])`
-		).forEach( ( region ) => {
-			const id = region.getAttribute( regionAttr );
-			regions[ id ] = vdom?.has( region )
-				? vdom.get( region )
-				: toVdom( region );
-		} );
-	}
+/**
+ * Processes a DOM document to extract router regions and related resources.
+ *
+ * This function analyzes the provided DOM document and creates a virtual DOM
+ * representation of all HTML regions marked with a `router-region` directive.
+ * It also extracts and preloads associated styles and scripts to prepare for
+ * rendering the page.
+ *
+ * @param url             The URL associated with the page, used for asset
+ *                        loading and caching.
+ * @param dom             The DOM document to process.
+ * @param vdomParams      Optional parameters for virtual DOM processing.
+ * @param vdomParams.vdom An optional existing virtual DOM cache to check for
+ *                        regions. If a region exists in this cache, it will be
+ *                        reused instead of creating a new vDOM representation.
+ * @return                A Promise that resolves to a {@link Page} object
+ *                        containing the virtual DOM for all router regions,
+ *                        preloaded styles and scripts, page title, and initial
+ *                        server-rendered data.
+ */
+const preparePage: PreparePage = async ( url, dom, { vdom } = {} ) => {
+	const regions = {};
+	dom.querySelectorAll( regionsSelector ).forEach( ( region ) => {
+		const id = region.getAttribute( regionAttr );
+		regions[ id ] = vdom?.has( region )
+			? vdom.get( region )
+			: toVdom( region );
+	} );
+
 	const title = dom.querySelector( 'title' )?.innerText;
 	const initialData = parseServerData( dom );
-	return { regions, title, initialData };
+
+	// Wait for styles and modules to be ready.
+	const [ styles, scriptModules ] = await Promise.all( [
+		Promise.all( preloadStyles( dom, url ) ),
+		Promise.all( preloadScriptModules( dom ) ),
+	] );
+
+	return { regions, styles, scriptModules, title, initialData, url };
 };
 
-// Render all interactive regions contained in the given page.
-const renderRegions = async ( page: Page ) => {
-	if ( navigationMode === 'regionBased' ) {
-		batch( () => {
-			populateServerData( page.initialData );
-			document
-				.querySelectorAll(
-					`[${ interactiveAttr }][${ regionAttr }]:not([${ interactiveAttr }] [${ interactiveAttr }])`
-				)
-				.forEach( ( region ) => {
-					const id = region.getAttribute( regionAttr );
-					const fragment = getRegionRootFragment( region );
-					render( page.regions[ id ], fragment );
-				} );
+/**
+ * Renders a page by applying styles, populating server data, rendering regions,
+ * and updating the document title.
+ *
+ * @param page The {@link Page} object to render.
+ */
+const renderPage = ( page: Page ) => {
+	applyStyles( page.styles );
+
+	batch( () => {
+		populateServerData( page.initialData );
+		document.querySelectorAll( regionsSelector ).forEach( ( region ) => {
+			const id = region.getAttribute( regionAttr );
+			const fragment = getRegionRootFragment( region );
+			render( page.regions[ id ], fragment );
 		} );
-	}
+	} );
+
 	if ( page.title ) {
 		document.title = page.title;
 	}
@@ -137,7 +185,7 @@ window.addEventListener( 'popstate', async () => {
 	const pagePath = getPagePath( window.location.href ); // Remove hash.
 	const page = pages.has( pagePath ) && ( await pages.get( pagePath ) );
 	if ( page ) {
-		await renderRegions( page );
+		renderPage( page );
 		// Update the URL in the state.
 		state.url = window.location.href;
 	} else {
@@ -146,9 +194,18 @@ window.addEventListener( 'popstate', async () => {
 } );
 
 // Initialize the router and cache the initial page using the initial vDOM.
+// Once this code is tested and more mature, the head should be updated for
+// region based navigation as well.
+window.document
+	.querySelectorAll< HTMLScriptElement >( 'script[type=module][src]' )
+	.forEach( ( { src } ) => markScriptModuleAsResolved( src ) );
 pages.set(
 	getPagePath( window.location.href ),
-	Promise.resolve( regionsToVdom( document, { vdom: initialVdom } ) )
+	Promise.resolve(
+		preparePage( getPagePath( window.location.href ), document, {
+			vdom: initialVdom,
+		} )
+	)
 );
 
 // Variable to store the current navigation.
@@ -169,8 +226,11 @@ interface Store {
 		};
 	};
 	actions: {
-		navigate: ( href: string, options?: NavigateOptions ) => void;
-		prefetch: ( url: string, options?: PrefetchOptions ) => void;
+		navigate: (
+			href: string,
+			options?: NavigateOptions
+		) => Promise< void >;
+		prefetch: ( url: string, options?: PrefetchOptions ) => Promise< void >;
 	};
 }
 
@@ -259,7 +319,8 @@ export const { state, actions } = store< Store >( 'core/router', {
 				! page.initialData?.config?.[ 'core/router' ]
 					?.clientNavigationDisabled
 			) {
-				yield renderRegions( page );
+				yield importScriptModules( page.scriptModules );
+				renderPage( page );
 				window.history[
 					options.replace ? 'replaceState' : 'pushState'
 				]( {}, '', href );
@@ -298,8 +359,10 @@ export const { state, actions } = store< Store >( 'core/router', {
 		 * @param [options]       Options object.
 		 * @param [options.force] Force fetching the URL again.
 		 * @param [options.html]  HTML string to be used instead of fetching the requested URL.
+		 *
+		 * @return  Promise that resolves once the page has been fetched.
 		 */
-		prefetch( url: string, options: PrefetchOptions = {} ) {
+		*prefetch( url: string, options: PrefetchOptions = {} ) {
 			const { clientNavigationDisabled } = getConfig();
 			if ( clientNavigationDisabled ) {
 				return;
@@ -312,6 +375,8 @@ export const { state, actions } = store< Store >( 'core/router', {
 					fetchPage( pagePath, { html: options.html } )
 				);
 			}
+
+			yield pages.get( pagePath );
 		},
 	},
 } );
