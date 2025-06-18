@@ -52,6 +52,7 @@ interface VdomParams {
 interface Page {
 	url: string;
 	regions: Record< string, any >;
+	regionsToAttach: Record< string, string >;
 	styles: StyleElement[];
 	scriptModules: ScriptModuleLoad[];
 	title: string;
@@ -72,6 +73,22 @@ const pages = new Map< string, Promise< Page | false > >();
 const getPagePath = ( url: string ) => {
 	const u = new URL( url, window.location.href );
 	return u.pathname + u.search;
+};
+
+/**
+ * Parses the given region's directive.
+ *
+ * @param region Region element.
+ * @return Data contained in the region directive value.
+ */
+const parseRegionAttribute = ( region: Element ) => {
+	const value = region.getAttribute( regionAttr );
+	try {
+		const { id, attachTo } = JSON.parse( value );
+		return { id, attachTo };
+	} catch ( e ) {
+		return { id: value };
+	}
 };
 
 /**
@@ -122,11 +139,15 @@ const fetchPage = async ( url: string, { html }: { html: string } ) => {
  */
 const preparePage: PreparePage = async ( url, dom, { vdom } = {} ) => {
 	const regions = {};
+	const regionsToAttach = {};
 	dom.querySelectorAll( regionsSelector ).forEach( ( region ) => {
-		const id = region.getAttribute( regionAttr );
+		const { id, attachTo } = parseRegionAttribute( region );
 		regions[ id ] = vdom?.has( region )
 			? vdom.get( region )
 			: toVdom( region );
+		if ( attachTo ) {
+			regionsToAttach[ id ] = attachTo;
+		}
 	} );
 
 	const title = dom.querySelector( 'title' )?.innerText;
@@ -138,7 +159,15 @@ const preparePage: PreparePage = async ( url, dom, { vdom } = {} ) => {
 		Promise.all( preloadScriptModules( dom ) ),
 	] );
 
-	return { regions, styles, scriptModules, title, initialData, url };
+	return {
+		regions,
+		regionsToAttach,
+		styles,
+		scriptModules,
+		title,
+		initialData,
+		url,
+	};
 };
 
 /**
@@ -150,13 +179,36 @@ const preparePage: PreparePage = async ( url, dom, { vdom } = {} ) => {
 const renderPage = ( page: Page ) => {
 	applyStyles( page.styles );
 
+	// Clone regionsToAttach.
+	const regionsToAttach = { ...page.regionsToAttach };
+
 	batch( () => {
 		populateServerData( page.initialData );
 		document.querySelectorAll( regionsSelector ).forEach( ( region ) => {
-			const id = region.getAttribute( regionAttr );
+			const { id } = parseRegionAttribute( region );
 			const fragment = getRegionRootFragment( region );
 			render( page.regions[ id ], fragment );
+			// If this is an attached region, remove it from the list.
+			delete regionsToAttach[ id ];
 		} );
+
+		// Render unattached regions.
+		for ( const id in regionsToAttach ) {
+			const parent = document.querySelector( regionsToAttach[ id ] );
+
+			// Get the type from the vnode. If wrapped with Directives, get the
+			// original type from `props.type`.
+			const { props, type } = page.regions[ id ];
+			const elementType = typeof type === 'function' ? props.type : type;
+
+			// Create an element with the obtained type where the region will be
+			// rendered. The type should match the one of the root vnode.
+			const region = document.createElement( elementType );
+			parent.appendChild( region );
+
+			const fragment = getRegionRootFragment( region );
+			render( page.regions[ id ], fragment );
+		}
 	} );
 
 	if ( page.title ) {

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+-   Add support for new router regions with `attachTo` from new pages. ([70421](https://github.com/WordPress/gutenberg/pull/70421))
+
 ### Enhancements
 
 -   Export `NavigateOptions` and `PrefetchOptions` types. ([#70315](https://github.com/WordPress/gutenberg/pull/70315))
