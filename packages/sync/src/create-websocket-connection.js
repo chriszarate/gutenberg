@@ -24,8 +24,7 @@ export function createWebSocketConnection( { password } ) {
 		/** @type {import("yjs").Doc} */ doc
 	) {
 		const roomName = `${ objectType }-${ objectId }`;
-		const serverUrl =
-			'wss://real-time-collaboration-poc-node.go-vip.net/_ws/';
+		const serverUrl = 'ws://localhost:1234/_ws/';
 		try {
 			new WebsocketProvider( serverUrl, roomName, doc, {
 				// @ts-ignore
