@@ -296,7 +296,7 @@ const actions = [
 		label: 'View',
 		isPrimary: true,
 		icon: <Icon icon={ view } />,
-		isEligible: ( item ) => item.status === 'published'
+		isEligible: ( item ) => item.status === 'published',
 		callback: ( items ) => {
 			console.log( 'Viewing item:', items[0] );
 		},
@@ -704,6 +704,40 @@ The header text to show in the modal.
 
 -   Type: `string`
 -   Optional
+
+### `modalSize`
+
+Specifies the size of the modal window when displaying action content using `RenderModal`.
+
+-	Type: `string`
+-	Optional
+-	Default: `'medium'`
+-	One of: `'small'`, `'medium'`, `'large'`, `'fill'`
+
+Example:
+
+```js
+{
+	modalSize: 'large';
+}
+```
+
+### `modalFocusOnMount`
+
+Specifies the focus on mount property of the modal.
+
+-	Type: `boolean` | `string`
+-	Optional
+-	Default: `true`
+-	One of: `true` | `false` | `'firstElement'` | `'firstContentElement'`
+
+Example:
+
+```js
+{
+	modalFocusOnMount: 'firstContentElement';
+}
+```
 
 ## Fields API
 

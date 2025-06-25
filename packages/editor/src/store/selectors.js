@@ -1067,6 +1067,26 @@ export function isPostLocked( state ) {
  *
  * @param {Object} state Global application state.
  *
+ * @example
+ * ```jsx
+ * import { __ } from '@wordpress/i18n';
+ * import { store as editorStore } from '@wordpress/editor';
+ * import { useSelect } from '@wordpress/data';
+ *
+ * const ExampleComponent = () => {
+ * 	const isSavingLocked = useSelect(
+ * 		( select ) => select( editorStore ).isPostSavingLocked(),
+ * 		[]
+ * 	);
+ *
+ * 	return isSavingLocked ? (
+ * 		<p>{ __( 'Post saving is locked' ) }</p>
+ * 	) : (
+ * 		<p>{ __( 'Post saving is not locked' ) }</p>
+ * 	);
+ * };
+ * ```
+ *
  * @return {boolean} Is locked.
  */
 export function isPostSavingLocked( state ) {
@@ -1234,10 +1254,10 @@ export const isEditorPanelOpened = createRegistrySelector(
 /**
  * Returns the current selection start.
  *
+ * @deprecated since Gutenberg 10.0.0.
+ *
  * @param {Object} state
  * @return {WPBlockSelection} The selection start.
- *
- * @deprecated since Gutenberg 10.0.0.
  */
 export function getEditorSelectionStart( state ) {
 	deprecated( "select('core/editor').getEditorSelectionStart", {
@@ -1250,10 +1270,10 @@ export function getEditorSelectionStart( state ) {
 /**
  * Returns the current selection end.
  *
+ * @deprecated since Gutenberg 10.0.0.
+ *
  * @param {Object} state
  * @return {WPBlockSelection} The selection end.
- *
- * @deprecated since Gutenberg 10.0.0.
  */
 export function getEditorSelectionEnd( state ) {
 	deprecated( "select('core/editor').getEditorSelectionStart", {
@@ -1723,11 +1743,10 @@ export const __experimentalGetDefaultTemplateTypes = createRegistrySelector(
 			{
 				since: '6.8',
 				alternative:
-					"select('core/core-data').getEntityRecord( 'root', '__unstableBase' )?.default_template_types",
+					"select('core/core-data').getCurrentTheme()?.default_template_types",
 			}
 		);
-		return select( coreStore ).getEntityRecord( 'root', '__unstableBase' )
-			?.default_template_types;
+		return select( coreStore ).getCurrentTheme()?.default_template_types;
 	}
 );
 
@@ -1746,12 +1765,12 @@ export const __experimentalGetDefaultTemplatePartAreas = createRegistrySelector(
 				{
 					since: '6.8',
 					alternative:
-						"select('core/core-data').getEntityRecord( 'root', '__unstableBase' )?.default_template_part_areas",
+						"select('core/core-data').getCurrentTheme()?.default_template_part_areas",
 				}
 			);
 
 			const areas =
-				select( coreStore ).getEntityRecord( 'root', '__unstableBase' )
+				select( coreStore ).getCurrentTheme()
 					?.default_template_part_areas || [];
 
 			return areas.map( ( item ) => {
@@ -1777,10 +1796,8 @@ export const __experimentalGetDefaultTemplateType = createRegistrySelector(
 					since: '6.8',
 				}
 			);
-			const templateTypes = select( coreStore ).getEntityRecord(
-				'root',
-				'__unstableBase'
-			)?.default_template_types;
+			const templateTypes =
+				select( coreStore ).getCurrentTheme()?.default_template_types;
 
 			if ( ! templateTypes ) {
 				return EMPTY_OBJECT;
@@ -1813,13 +1830,11 @@ export const __experimentalGetTemplateInfo = createRegistrySelector(
 				return EMPTY_OBJECT;
 			}
 
-			const templateTypes =
-				select( coreStore ).getEntityRecord( 'root', '__unstableBase' )
-					?.default_template_types || [];
+			const currentTheme = select( coreStore ).getCurrentTheme();
 
+			const templateTypes = currentTheme?.default_template_types || [];
 			const templateAreas =
-				select( coreStore ).getEntityRecord( 'root', '__unstableBase' )
-					?.default_template_part_areas || [];
+				currentTheme?.default_template_part_areas || [];
 
 			return getTemplateInfo( {
 				template,

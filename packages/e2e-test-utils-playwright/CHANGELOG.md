@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+## 1.26.0 (2025-06-25)
+
+## 1.25.0 (2025-06-04)
+
+## 1.24.0 (2025-05-22)
+
+## 1.23.0 (2025-05-07)
+
+## 1.22.0 (2025-04-11)
+
+### Enhancements
+
+* Added new `PageUtils.emulateNetworkConditions()` helper to emulate network conditions such as Slow 3G, Fast 4G or Broadband ([#69865](https://github.com/WordPress/gutenberg/pull/69865)).
+
+## 1.21.0 (2025-03-27)
+
+## 1.20.0 (2025-03-13)
+
+## 1.19.0 (2025-02-28)
+
+## 1.18.0 (2025-02-12)
+
+## 1.17.0 (2025-01-29)
+
+## 1.16.0 (2025-01-15)
+
 ## 1.15.0 (2025-01-02)
 
 ## 1.14.0 (2024-12-11)

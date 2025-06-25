@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+## 6.26.0 (2025-06-25)
+
+## 6.25.0 (2025-06-04)
+
+### Bug Fixes
+
+-   Fix `store()` types to support typing it without passing a store part. ([#70296](https://github.com/WordPress/gutenberg/pull/70296))
+-   Fix captured errors in `withScope` for passed generators. ([#70303](https://github.com/WordPress/gutenberg/pull/70303))
+-   Fix parsing of HTML comments without siblings. ([#70304](https://github.com/WordPress/gutenberg/pull/70304))
+
+## 6.24.0 (2025-05-22)
+
+## 6.23.0 (2025-05-07)
+
+## 6.22.0 (2025-04-11)
+
+## 6.21.0 (2025-03-27)
+
+## 6.20.0 (2025-03-13)
+
+## 6.19.0 (2025-02-28)
+
+## 6.18.0 (2025-02-12)
+
+## 6.17.0 (2025-01-29)
+
+## 6.16.0 (2025-01-15)
+
+### Bug Fixes
+
+-   Fix the logic path that merges plain objects ([#68579](https://github.com/WordPress/gutenberg/pull/68579)).
+
 ## 6.15.0 (2025-01-02)
 
 ### Enhancements

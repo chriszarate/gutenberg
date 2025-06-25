@@ -7,6 +7,7 @@ import { v4 as uuid } from 'uuid';
  * WordPress dependencies
  */
 import { select, dispatch } from '@wordpress/data';
+import { store as coreDataStore } from '@wordpress/core-data';
 import { uploadMedia } from '@wordpress/media-utils';
 
 /**
@@ -28,6 +29,7 @@ const noop = () => {};
  * @param {Function} $0.onError           Function called when an error happens.
  * @param {Function} $0.onFileChange      Function called each time a file or a temporary representation of the file is available.
  * @param {Function} $0.onSuccess         Function called after the final representation of the file is available.
+ * @param {boolean}  $0.multiple          Whether to allow multiple files to be uploaded.
  */
 export default function mediaUpload( {
 	additionalData = {},
@@ -37,7 +39,9 @@ export default function mediaUpload( {
 	onError = noop,
 	onFileChange,
 	onSuccess,
+	multiple = true,
 } ) {
+	const { receiveEntityRecords } = dispatch( coreDataStore );
 	const { getCurrentPost, getEditorSettings } = select( editorStore );
 	const {
 		lockPostAutosaving,
@@ -80,6 +84,21 @@ export default function mediaUpload( {
 				clearSaveLock();
 			}
 			onFileChange?.( file );
+
+			// Files are initially received by `onFileChange` as a blob.
+			// After that the function is called a second time with the file as an entity.
+			// For core-data, we only care about receiving/invalidating entities.
+			const entityFiles = file.filter( ( _file ) => _file?.id );
+			if ( entityFiles?.length ) {
+				const invalidateCache = true;
+				receiveEntityRecords(
+					'root',
+					'media',
+					entityFiles,
+					undefined,
+					invalidateCache
+				);
+			}
 		},
 		onSuccess,
 		additionalData: {
@@ -92,5 +111,6 @@ export default function mediaUpload( {
 			onError( message );
 		},
 		wpAllowedMimeTypes,
+		multiple,
 	} );
 }

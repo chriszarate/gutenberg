@@ -8,6 +8,11 @@ import type { ReactElement, ComponentType } from 'react';
  */
 import type { SetSelection } from './private-types';
 
+/**
+ * WordPress dependencies
+ */
+import type { useFocusOnMount } from '@wordpress/compose';
+
 export type SortDirection = 'asc' | 'desc';
 
 /**
@@ -463,6 +468,20 @@ export interface ActionModal< Item > extends ActionBase< Item > {
 	 * The header of the modal.
 	 */
 	modalHeader?: string;
+
+	/**
+	 * The size of the modal.
+	 *
+	 * @default 'medium'
+	 */
+	modalSize?: 'small' | 'medium' | 'large' | 'fill';
+
+	/**
+	 * The focus on mount property of the modal.
+	 */
+	modalFocusOnMount?:
+		| Parameters< typeof useFocusOnMount >[ 0 ]
+		| 'firstContentElement';
 }
 
 export interface ActionButton< Item > extends ActionBase< Item > {

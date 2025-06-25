@@ -216,6 +216,7 @@ export const saveDirtyEntities =
 								{
 									label: __( 'View site' ),
 									url: homeUrl,
+									openInNewTab: true,
 								},
 							],
 						} );
@@ -491,4 +492,37 @@ export const removeTemplates =
 				.dispatch( noticesStore )
 				.createErrorNotice( errorMessage, { type: 'snackbar' } );
 		}
+	};
+
+/**
+ * Set the default rendering mode preference for the current post type.
+ *
+ * @param {string} mode The rendering mode to set as default.
+ */
+export const setDefaultRenderingMode =
+	( mode ) =>
+	( { select, registry } ) => {
+		const postType = select.getCurrentPostType();
+		const theme = registry
+			.select( coreStore )
+			.getCurrentTheme()?.stylesheet;
+		const renderingModes =
+			registry
+				.select( preferencesStore )
+				.get( 'core', 'renderingModes' )?.[ theme ] ?? {};
+
+		if ( renderingModes[ postType ] === mode ) {
+			return;
+		}
+
+		const newModes = {
+			[ theme ]: {
+				...renderingModes,
+				[ postType ]: mode,
+			},
+		};
+
+		registry
+			.dispatch( preferencesStore )
+			.set( 'core', 'renderingModes', newModes );
 	};

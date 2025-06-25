@@ -167,7 +167,7 @@
 		color: $components-color-accent;
 		background: transparent;
 
-		&:hover:not(:disabled, [aria-disabled="true"]) {
+		&:hover:not(:disabled, [aria-disabled="true"], .is-pressed) {
 			background: color-mix(in srgb, $components-color-accent 4%, transparent);
 			color: $components-color-accent-darker-20;
 		}
@@ -302,7 +302,6 @@
 
 		&.has-icon:not(.has-text) {
 			padding: 0;
-			width: $button-size-compact;
 			min-width: $button-size-compact;
 		}
 	}
@@ -315,7 +314,6 @@
 
 		&.has-icon:not(.has-text) {
 			padding: 0;
-			width: $button-size-small;
 			min-width: $button-size-small;
 		}
 	}

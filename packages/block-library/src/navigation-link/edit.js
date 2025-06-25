@@ -14,7 +14,6 @@ import {
 	TextControl,
 	TextareaControl,
 	ToolbarButton,
-	Tooltip,
 	ToolbarGroup,
 } from '@wordpress/components';
 import { displayShortcut, isKeyboardEvent } from '@wordpress/keycodes';
@@ -27,6 +26,7 @@ import {
 	store as blockEditorStore,
 	getColorClassName,
 	useInnerBlocksProps,
+	useBlockEditingMode,
 } from '@wordpress/block-editor';
 import { isURL, prependHTTP, safeDecodeURI } from '@wordpress/url';
 import { useState, useEffect, useRef } from '@wordpress/element';
@@ -42,8 +42,13 @@ import { useMergeRefs, usePrevious } from '@wordpress/compose';
 import { LinkUI } from './link-ui';
 import { updateAttributes } from './update-attributes';
 import { getColors } from '../navigation/edit/utils';
+import { useToolsPanelDropdownMenuProps } from '../utils/hooks';
 
 const DEFAULT_BLOCK = { name: 'core/navigation-link' };
+const NESTING_BLOCK_NAMES = [
+	'core/navigation-link',
+	'core/navigation-submenu',
+];
 
 /**
  * A React hook to determine if it's dragging within the target element.
@@ -96,19 +101,29 @@ const useIsDraggingWithin = ( elementRef ) => {
 	return isDraggingWithin;
 };
 
-const useIsInvalidLink = ( kind, type, id ) => {
+const useIsInvalidLink = ( kind, type, id, enabled ) => {
 	const isPostType =
 		kind === 'post-type' || type === 'post' || type === 'page';
 	const hasId = Number.isInteger( id );
+	const blockEditingMode = useBlockEditingMode();
+
 	const postStatus = useSelect(
 		( select ) => {
 			if ( ! isPostType ) {
 				return null;
 			}
+
+			// Fetching the posts status is an "expensive" operation. Especially for sites with large navigations.
+			// When the block is rendered in a template or other disabled contexts we can skip this check in order
+			// to avoid all these additional requests that don't really add any value in that mode.
+			if ( blockEditingMode === 'disabled' || ! enabled ) {
+				return null;
+			}
+
 			const { getEntityRecord } = select( coreStore );
 			return getEntityRecord( 'postType', type, id )?.status;
 		},
-		[ isPostType, type, id ]
+		[ isPostType, blockEditingMode, enabled, type, id ]
 	);
 
 	// Check Navigation Link validity if:
@@ -160,9 +175,21 @@ function getMissingText( type ) {
  * Consider reusing this components for both blocks.
  */
 function Controls( { attributes, setAttributes, setIsLabelFieldFocused } ) {
-	const { label, url, description, title, rel } = attributes;
+	const { label, url, description, rel } = attributes;
+	const dropdownMenuProps = useToolsPanelDropdownMenuProps();
 	return (
-		<ToolsPanel label={ __( 'Settings' ) }>
+		<ToolsPanel
+			label={ __( 'Settings' ) }
+			resetAll={ () => {
+				setAttributes( {
+					label: '',
+					url: '',
+					description: '',
+					rel: '',
+				} );
+			} }
+			dropdownMenuProps={ dropdownMenuProps }
+		>
 			<ToolsPanelItem
 				hasValue={ () => !! label }
 				label={ __( 'Text' ) }
@@ -202,6 +229,7 @@ function Controls( { attributes, setAttributes, setIsLabelFieldFocused } ) {
 						);
 					} }
 					autoComplete="off"
+					type="url"
 				/>
 			</ToolsPanelItem>
 
@@ -220,27 +248,6 @@ function Controls( { attributes, setAttributes, setIsLabelFieldFocused } ) {
 					} }
 					help={ __(
 						'The description will be displayed in the menu if the current theme supports it.'
-					) }
-				/>
-			</ToolsPanelItem>
-
-			<ToolsPanelItem
-				hasValue={ () => !! title }
-				label={ __( 'Title attribute' ) }
-				onDeselect={ () => setAttributes( { title: '' } ) }
-				isShownByDefault
-			>
-				<TextControl
-					__nextHasNoMarginBottom
-					__next40pxDefaultSize
-					label={ __( 'Title attribute' ) }
-					value={ title || '' }
-					onChange={ ( titleValue ) => {
-						setAttributes( { title: titleValue } );
-					} }
-					autoComplete="off"
-					help={ __(
-						'Additional information to help clarify the purpose of the link.'
 					) }
 				/>
 			</ToolsPanelItem>
@@ -280,8 +287,6 @@ export default function NavigationLinkEdit( {
 	clientId,
 } ) {
 	const { id, label, type, url, description, kind } = attributes;
-
-	const [ isInvalid, isDraft ] = useIsInvalidLink( kind, type, id );
 	const { maxNestingLevel } = context;
 
 	const {
@@ -313,6 +318,7 @@ export default function NavigationLinkEdit( {
 		isTopLevelLink,
 		isParentOfSelectedBlock,
 		hasChildren,
+		validateLinkStatus,
 	} = useSelect(
 		( select ) => {
 			const {
@@ -321,27 +327,47 @@ export default function NavigationLinkEdit( {
 				getBlockRootClientId,
 				hasSelectedInnerBlock,
 				getBlockParentsByBlockName,
+				getSelectedBlockClientId,
 			} = select( blockEditorStore );
+			const rootClientId = getBlockRootClientId( clientId );
+			const isTopLevel =
+				getBlockName( rootClientId ) === 'core/navigation';
+			const selectedBlockClientId = getSelectedBlockClientId();
+			const rootNavigationClientId = isTopLevel
+				? rootClientId
+				: getBlockParentsByBlockName(
+						clientId,
+						'core/navigation'
+				  )[ 0 ];
+
+			// Enable when the root Navigation block is selected or any of its inner blocks.
+			const enableLinkStatusValidation =
+				selectedBlockClientId === rootNavigationClientId ||
+				hasSelectedInnerBlock( rootNavigationClientId, true );
 
 			return {
 				isAtMaxNesting:
-					getBlockParentsByBlockName( clientId, [
-						'core/navigation-link',
-						'core/navigation-submenu',
-					] ).length >= maxNestingLevel,
-				isTopLevelLink:
-					getBlockName( getBlockRootClientId( clientId ) ) ===
-					'core/navigation',
+					getBlockParentsByBlockName( clientId, NESTING_BLOCK_NAMES )
+						.length >= maxNestingLevel,
+				isTopLevelLink: isTopLevel,
 				isParentOfSelectedBlock: hasSelectedInnerBlock(
 					clientId,
 					true
 				),
 				hasChildren: !! getBlockCount( clientId ),
+				validateLinkStatus: enableLinkStatusValidation,
 			};
 		},
 		[ clientId, maxNestingLevel ]
 	);
 	const { getBlocks } = useSelect( blockEditorStore );
+
+	const [ isInvalid, isDraft ] = useIsInvalidLink(
+		kind,
+		type,
+		id,
+		validateLinkStatus
+	);
 
 	/**
 	 * Transform to submenu block.
@@ -490,10 +516,6 @@ export default function NavigationLinkEdit( {
 	const placeholderText = `(${
 		isInvalid ? __( 'Invalid' ) : __( 'Draft' )
 	})`;
-	const tooltipText =
-		isInvalid || isDraft
-			? __( 'This item has been deleted, or is a draft' )
-			: __( 'This item is missing a link' );
 
 	return (
 		<>
@@ -533,9 +555,7 @@ export default function NavigationLinkEdit( {
 					{ /* eslint-enable */ }
 					{ ! url ? (
 						<div className="wp-block-navigation-link__placeholder-text">
-							<Tooltip text={ tooltipText }>
-								<span>{ missingText }</span>
-							</Tooltip>
+							<span>{ missingText }</span>
 						</div>
 					) : (
 						<>
@@ -578,27 +598,30 @@ export default function NavigationLinkEdit( {
 							{ ( isInvalid ||
 								isDraft ||
 								isLabelFieldFocused ) && (
-								<div className="wp-block-navigation-link__placeholder-text wp-block-navigation-link__label">
-									<Tooltip text={ tooltipText }>
-										<span
-											aria-label={ __(
-												'Navigation link text'
-											) }
-										>
-											{
-												// Some attributes are stored in an escaped form. It's a legacy issue.
-												// Ideally they would be stored in a raw, unescaped form.
-												// Unescape is used here to "recover" the escaped characters
-												// so they display without encoding.
-												// See `updateAttributes` for more details.
-												`${ decodeEntities( label ) } ${
-													isInvalid || isDraft
-														? placeholderText
-														: ''
-												}`.trim()
-											}
-										</span>
-									</Tooltip>
+								<div
+									className={ clsx(
+										'wp-block-navigation-link__placeholder-text',
+										'wp-block-navigation-link__label',
+										{
+											'is-invalid': isInvalid,
+											'is-draft': isDraft,
+										}
+									) }
+								>
+									<span>
+										{
+											// Some attributes are stored in an escaped form. It's a legacy issue.
+											// Ideally they would be stored in a raw, unescaped form.
+											// Unescape is used here to "recover" the escaped characters
+											// so they display without encoding.
+											// See `updateAttributes` for more details.
+											`${ decodeEntities( label ) } ${
+												isInvalid || isDraft
+													? placeholderText
+													: ''
+											}`.trim()
+										}
+									</span>
 								</div>
 							) }
 						</>

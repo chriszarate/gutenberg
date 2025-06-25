@@ -3,9 +3,9 @@
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"definitions": {
 		"//": {
-			"explainer": "https://developer.wordpress.org/themes/advanced-topics/theme-json/",
+			"explainer": "https://developer.wordpress.org/themes/global-settings-and-styles/",
 			"createTheme": "https://developer.wordpress.org/themes/",
-			"reference": "https://developer.wordpress.org/block-editor/how-to-guides/themes/theme-json/"
+			"reference": "https://developer.wordpress.org/block-editor/how-to-guides/themes/global-settings-and-styles/"
 		},
 		"refComplete": {
 			"type": "object",
@@ -1713,6 +1713,9 @@
 				":focus": {
 					"$ref": "#/definitions/stylesPropertiesComplete"
 				},
+				":focus-visible": {
+					"$ref": "#/definitions/stylesPropertiesComplete"
+				},
 				":hover": {
 					"$ref": "#/definitions/stylesPropertiesComplete"
 				},
@@ -1729,6 +1732,7 @@
 				":active",
 				":any-link",
 				":focus",
+				":focus-visible",
 				":hover",
 				":link",
 				":visited"
@@ -2575,15 +2579,15 @@
 			"const": 3
 		},
 		"title": {
-			"description": "Title of the global styles variation. If not defined, the file name will be used.",
+			"description": "Title of the styles variation. If not defined, the file name will be used.",
 			"type": "string"
 		},
 		"slug": {
-			"description": "Slug of the global styles variation. If not defined, the kebab-case title will be used.",
+			"description": "Slug of the styles variation. If not defined, the kebab-case title will be used.",
 			"type": "string"
 		},
 		"description": {
-			"description": "Description of the global styles variation.",
+			"description": "Description of the styles variation.",
 			"type": "string"
 		},
 		"blockTypes": {

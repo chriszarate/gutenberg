@@ -60,7 +60,7 @@ test.describe( 'Buttons', () => {
 		).toBeFocused();
 		await pageUtils.pressKeys( 'primary+k' );
 		await expect(
-			page.locator( 'role=combobox[name="Search or type URL"i]' )
+			page.locator( 'role=combobox[name="Link"i]' )
 		).toBeFocused();
 		await page.keyboard.press( 'Escape' );
 		await expect(
@@ -91,7 +91,7 @@ test.describe( 'Buttons', () => {
 		).toBeFocused();
 		await pageUtils.pressKeys( 'primary+k' );
 		await expect(
-			page.locator( 'role=combobox[name="Search or type URL"i]' )
+			page.locator( 'role=combobox[name="Link"i]' )
 		).toBeFocused();
 		await page.keyboard.type( 'https://example.com' );
 		await page.keyboard.press( 'Enter' );
@@ -123,9 +123,7 @@ test.describe( 'Buttons', () => {
 		).toBeFocused();
 		await pageUtils.pressKeys( 'primary+k' );
 
-		const urlInput = page.locator(
-			'role=combobox[name="Search or type URL"i]'
-		);
+		const urlInput = page.locator( 'role=combobox[name="Link"i]' );
 
 		await expect( urlInput ).toBeFocused();
 		await page.keyboard.type( 'example.com' );
@@ -295,11 +293,11 @@ test.describe( 'Buttons', () => {
 		await page.click(
 			'role=region[name="Editor settings"i] >> role=button[name="Text"i]'
 		);
-		await page.click( 'role=option[name="Color: Cyan bluish gray"i]' );
+		await page.click( 'role=option[name="Cyan bluish gray"i]' );
 		await page.click(
 			'role=region[name="Editor settings"i] >> role=button[name="Background"i]'
 		);
-		await page.click( 'role=option[name="Color: Vivid red"i]' );
+		await page.click( 'role=option[name="Vivid red"i]' );
 
 		// Check the content.
 		const content = await editor.getEditedPostContent();
@@ -324,13 +322,13 @@ test.describe( 'Buttons', () => {
 		await page.click(
 			'role=region[name="Editor settings"i] >> role=button[name="Text"i]'
 		);
-		await page.click( 'role=button[name="Custom color picker."i]' );
+		await page.click( 'role=button[name="Custom color picker"i]' );
 		await page.fill( 'role=textbox[name="Hex color"i]', 'ff0000' );
 
 		await page.click(
 			'role=region[name="Editor settings"i] >> role=button[name="Background"i]'
 		);
-		await page.click( 'role=button[name="Custom color picker."i]' );
+		await page.click( 'role=button[name="Custom color picker"i]' );
 		await page.fill( 'role=textbox[name="Hex color"i]', '00ff00' );
 
 		// Check the content.

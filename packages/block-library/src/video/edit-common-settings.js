@@ -22,6 +22,7 @@ const VideoSettings = ( { setAttributes, attributes } ) => {
 	const autoPlayHelpText = __(
 		'Autoplay may cause usability issues for some users.'
 	);
+
 	const getAutoplayHelp = Platform.select( {
 		web: useCallback( ( checked ) => {
 			return checked ? autoPlayHelpText : null;
@@ -32,7 +33,11 @@ const VideoSettings = ( { setAttributes, attributes } ) => {
 	const toggleFactory = useMemo( () => {
 		const toggleAttribute = ( attribute ) => {
 			return ( newValue ) => {
-				setAttributes( { [ attribute ]: newValue } );
+				setAttributes( {
+					[ attribute ]: newValue,
+					// Set muted when autoplay changes
+					...( attribute === 'autoplay' && { muted: newValue } ),
+				} );
 			};
 		};
 
@@ -56,7 +61,7 @@ const VideoSettings = ( { setAttributes, attributes } ) => {
 				isShownByDefault
 				hasValue={ () => !! autoplay }
 				onDeselect={ () => {
-					setAttributes( { autoplay: false } );
+					setAttributes( { autoplay: false, muted: false } );
 				} }
 			>
 				<ToggleControl
@@ -95,6 +100,10 @@ const VideoSettings = ( { setAttributes, attributes } ) => {
 					label={ __( 'Muted' ) }
 					onChange={ toggleFactory.muted }
 					checked={ !! muted }
+					disabled={ autoplay }
+					help={
+						autoplay ? __( 'Muted because of Autoplay.' ) : null
+					}
 				/>
 			</ToolsPanelItem>
 			<ToolsPanelItem
@@ -125,7 +134,7 @@ const VideoSettings = ( { setAttributes, attributes } ) => {
 					/* translators: Setting to play videos within the webpage on mobile browsers rather than opening in a fullscreen player. */
 					label={ __( 'Play inline' ) }
 					onChange={ toggleFactory.playsInline }
-					checked={ playsInline }
+					checked={ !! playsInline }
 					help={ __(
 						'When enabled, videos will play directly within the webpage on mobile browsers, instead of opening in a fullscreen player.'
 					) }

@@ -48,7 +48,7 @@ export default function PostCardPanel( {
 	);
 	const { postTitle, icon, labels } = useSelect(
 		( select ) => {
-			const { getEditedEntityRecord, getEntityRecord, getPostType } =
+			const { getEditedEntityRecord, getCurrentTheme, getPostType } =
 				select( coreStore );
 			const { getPostIcon } = unlock( select( editorStore ) );
 			let _title = '';
@@ -59,7 +59,7 @@ export default function PostCardPanel( {
 			);
 			if ( postIds.length === 1 ) {
 				const { default_template_types: templateTypes = [] } =
-					getEntityRecord( 'root', '__unstableBase' ) ?? {};
+					getCurrentTheme() ?? {};
 
 				const _templateInfo = [
 					TEMPLATE_POST_TYPE,
@@ -118,11 +118,13 @@ export default function PostCardPanel( {
 						<Badge>{ pageTypeBadge }</Badge>
 					) }
 				</Text>
-				<PostActions
-					postType={ postType }
-					postId={ postId }
-					onActionPerformed={ onActionPerformed }
-				/>
+				{ postIds.length === 1 && (
+					<PostActions
+						postType={ postType }
+						postId={ postIds[ 0 ] }
+						onActionPerformed={ onActionPerformed }
+					/>
+				) }
 			</HStack>
 			{ postIds.length > 1 && (
 				<Text className="editor-post-card-panel__description">
