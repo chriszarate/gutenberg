@@ -5,6 +5,8 @@
 		"types": [ "node" ]
 	},
 	"references": [
-		{ "path": "../hooks" }
+		{ "path": "../hooks" },
+		{ "path": "../sync" },
+		{ "path": "../url" }
 	]
 }

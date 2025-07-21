@@ -10,6 +10,7 @@ import { v4 as uuid } from 'uuid';
 import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
 import deprecated from '@wordpress/deprecated';
+import { getSyncProvider } from '@wordpress/sync';
 
 /**
  * Internal dependencies
@@ -19,7 +20,6 @@ import { receiveItems, removeItems, receiveQueriedItems } from './queried-data';
 import { DEFAULT_ENTITY_KEY } from './entities';
 import { createBatch } from './batch';
 import { STORE_NAME } from './name';
-import { getSyncProvider } from './sync';
 
 /**
  * Returns an action object used in signalling that authors have been received.
@@ -395,7 +395,8 @@ export const editEntityRecord =
 				return acc;
 			}, {} ),
 		};
-		if ( window.__experimentalEnableSync && entityConfig.syncConfig ) {
+		if ( entityConfig.syncConfig ) {
+			// Must be in a separate condition to appease linter.
 			if ( globalThis.IS_GUTENBERG_PLUGIN ) {
 				const objectId = entityConfig.getSyncObjectId( recordId );
 				getSyncProvider().update(

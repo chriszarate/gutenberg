@@ -1,16 +1,11 @@
 /**
  * External dependencies
  */
-// import { WebrtcProvider } from 'y-webrtc';
 
 /**
  * Internal dependencies
  */
 import { WebrtcProviderWithHttpSignaling } from './webrtc-http-stream-signaling';
-
-/** @typedef {import('./types').ObjectType} ObjectType */
-/** @typedef {import('./types').ObjectID} ObjectID */
-/** @typedef {import('./types').CRDTDoc} CRDTDoc */
 
 /**
  * Function that creates a new WebRTC Connection.
@@ -19,12 +14,12 @@ import { WebrtcProviderWithHttpSignaling } from './webrtc-http-stream-signaling'
  *
  * @param {Array<string>} config.signaling
  * @param {string}        config.password
- * @return {Function} Promise that resolves when the connection is established.
+ * @return {import('./types').ConnectDoc} Promise that resolves when the connection is established.
  */
 export function createWebRTCConnection( { signaling, password } ) {
 	return function (
-		/** @type {string} */ objectId,
-		/** @type {string} */ objectType,
+		/** @type {import("@wordpress/sync").ObjectId} */ objectId,
+		/** @type {import("@wordpress/sync").ObjectType} */ objectType,
 		/** @type {import("yjs").Doc} */ doc
 	) {
 		const roomName = `${ objectType }-${ objectId }`;
@@ -34,6 +29,10 @@ export function createWebRTCConnection( { signaling, password } ) {
 			password,
 		} );
 
-		return Promise.resolve( () => true );
+		return Promise.resolve( {
+			destroy: () => {
+				// No explicit destroy method in WebrtcProviderWithHttpSignaling.
+			},
+		} );
 	};
 }

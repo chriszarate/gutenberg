@@ -1968,6 +1968,12 @@
 		"parent": "packages"
 	},
 	{
+		"title": "@wordpress/sync-webrtc",
+		"slug": "packages-sync-webrtc",
+		"markdown_source": "../packages/sync-webrtc/README.md",
+		"parent": "packages"
+	},
+	{
 		"title": "@wordpress/token-list",
 		"slug": "packages-token-list",
 		"markdown_source": "../packages/token-list/README.md",

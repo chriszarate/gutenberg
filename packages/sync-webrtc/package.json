@@ -1,7 +1,7 @@
 {
-	"name": "@wordpress/sync",
+	"name": "@wordpress/sync-webrtc",
 	"version": "1.26.0",
-	"description": "Sync Data.",
+	"description": "Collaborative editing for WordPress using WebRTC",
 	"author": "The WordPress Contributors",
 	"license": "GPL-2.0-or-later",
 	"keywords": [
@@ -9,11 +9,11 @@
 		"gutenberg",
 		"sync"
 	],
-	"homepage": "https://github.com/WordPress/gutenberg/tree/HEAD/packages/sync/README.md",
+	"homepage": "https://github.com/WordPress/gutenberg/tree/HEAD/packages/sync-webrtc/README.md",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/WordPress/gutenberg.git",
-		"directory": "packages/sync"
+		"directory": "packages/sync-webrtc"
 	},
 	"bugs": {
 		"url": "https://github.com/WordPress/gutenberg/issues"
@@ -30,7 +30,15 @@
 	"sideEffects": false,
 	"dependencies": {
 		"@babel/runtime": "7.25.7",
-		"@wordpress/hooks": "file:../hooks"
+		"@types/simple-peer": "9.11.8",
+		"@wordpress/hooks": "file:../hooks",
+		"@wordpress/sync": "file:../sync",
+		"@wordpress/url": "file:../url",
+		"lib0": "0.2.114",
+		"simple-peer": "9.11.0",
+		"uuid": "9.0.1",
+		"y-protocols": "1.0.6",
+		"yjs": "13.6.27"
 	},
 	"publishConfig": {
 		"access": "public"

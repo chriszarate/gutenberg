@@ -1,27 +1,41 @@
-export type ObjectID = string;
+export type ObjectId = string;
 export type ObjectType = string;
-export type ObjectData = any;
-export type CRDTDoc = any;
 
-export type ObjectConfig = {
-	fetch: ( id: ObjectID ) => Promise< ObjectData >;
-	applyChangesToDoc: ( doc: CRDTDoc, data: any ) => void;
-	fromCRDTDoc: ( doc: CRDTDoc ) => any;
-};
+export interface ObjectRecord extends Record< string, any > {
+	id?: ObjectId;
+}
 
-export type ConnectDoc = (
-	id: ObjectID,
-	type: ObjectType,
-	doc: CRDTDoc
-) => Promise< () => void >;
+export type AwarenessEventListener = ( params: {
+	added: number[];
+	removed: number[];
+	updated: number[];
+} ) => void;
 
-export type SyncProvider = {
-	register: ( type: ObjectType, config: ObjectConfig ) => void;
+export interface AwarenessManager {
+	addListener: (
+		eventType: 'update' | 'change',
+		listener: AwarenessEventListener
+	) => void;
+	getStates: () => Map< number, Record< string, unknown > > | null;
+	removeStates: () => void;
+	setLocalState: ( field: string, value: unknown ) => void;
+}
+
+export interface SyncProvider< RecordType = ObjectRecord > {
 	bootstrap: (
 		type: ObjectType,
-		id: ObjectID,
-		handleChanges: ( data: any ) => void
-	) => Promise< CRDTDoc >;
-	update: ( type: ObjectType, id: ObjectID, data: any ) => void;
-	discard: ( type: ObjectType, id: ObjectID ) => Promise< CRDTDoc >;
-};
+		record: ObjectRecord,
+		onChange: ( changes: Partial< RecordType > ) => void
+	) => Promise< void >;
+
+	destroy: ( type: ObjectType, id: ObjectId ) => Promise< void >;
+
+	update: (
+		type: ObjectType,
+		record: ObjectRecord,
+		changes: Partial< RecordType >,
+		origin: string
+	) => void;
+
+	awarenessManager?: AwarenessManager;
+}
