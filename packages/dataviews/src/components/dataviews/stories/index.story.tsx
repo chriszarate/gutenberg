@@ -53,7 +53,7 @@ const defaultLayouts = {
 	[ LAYOUT_LIST ]: {},
 };
 
-export const Default = () => {
+export const Default = ( { perPageSizes = [ 10, 25, 50, 100 ] } ) => {
 	const [ view, setView ] = useState< View >( {
 		...DEFAULT_VIEW,
 		fields: [ 'categories' ],
@@ -86,8 +86,20 @@ export const Default = () => {
 			) }
 			isItemClickable={ () => true }
 			defaultLayouts={ defaultLayouts }
+			perPageSizes={ perPageSizes }
 		/>
 	);
+};
+
+Default.args = {
+	perPageSizes: [ 10, 25, 50, 100 ],
+};
+
+Default.argTypes = {
+	perPageSizes: {
+		control: 'object',
+		description: 'Array of available page sizes',
+	},
 };
 
 export const Empty = () => {
@@ -297,33 +309,6 @@ export const WithCard = () => {
 				/>
 			</CardBody>
 		</Card>
-	);
-};
-
-export const CustomPerPageSizes = () => {
-	const [ view, setView ] = useState< View >( {
-		...DEFAULT_VIEW,
-		fields: [ 'categories' ],
-		titleField: 'title',
-		descriptionField: 'description',
-		mediaField: 'image',
-		perPage: 3,
-	} );
-	const { data: shownData, paginationInfo } = useMemo( () => {
-		return filterSortAndPaginate( data, view, fields );
-	}, [ view ] );
-	return (
-		<DataViews
-			getItemId={ ( item ) => item.id.toString() }
-			paginationInfo={ paginationInfo }
-			data={ shownData }
-			view={ view }
-			fields={ fields }
-			onChangeView={ setView }
-			actions={ actions.filter( ( action ) => ! action.supportsBulk ) }
-			defaultLayouts={ defaultLayouts }
-			perPageSizes={ [ 3, 6, 12, 24 ] }
-		/>
 	);
 };
 

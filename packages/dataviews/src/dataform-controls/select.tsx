@@ -26,17 +26,24 @@ export default function Select< Item >( {
 		[ id, onChange ]
 	);
 
-	const elements = [
-		/*
-		 * Value can be undefined when:
-		 *
-		 * - the field is not required
-		 * - in bulk editing
-		 *
-		 */
-		{ label: __( 'Select item' ), value: '' },
-		...( field?.elements ?? [] ),
-	];
+	const fieldElements = field?.elements ?? [];
+	const hasEmptyValue = fieldElements.some(
+		( { value: elementValue } ) => elementValue === ''
+	);
+
+	const elements = hasEmptyValue
+		? fieldElements
+		: [
+				/*
+				 * Value can be undefined when:
+				 *
+				 * - the field is not required
+				 * - in bulk editing
+				 *
+				 */
+				{ label: __( 'Select item' ), value: '' },
+				...fieldElements,
+		  ];
 
 	return (
 		<SelectControl

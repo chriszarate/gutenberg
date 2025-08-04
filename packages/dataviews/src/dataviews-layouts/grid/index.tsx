@@ -8,7 +8,6 @@ import type { ComponentProps, ReactElement } from 'react';
  * WordPress dependencies
  */
 import {
-	__experimentalGrid as Grid,
 	__experimentalHStack as HStack,
 	__experimentalVStack as VStack,
 	Spinner,
@@ -18,6 +17,8 @@ import {
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 import { useInstanceId } from '@wordpress/compose';
+import { isAppleOS } from '@wordpress/keycodes';
+import { useContext } from '@wordpress/element';
 
 /**
  * Internal dependencies
@@ -25,6 +26,7 @@ import { useInstanceId } from '@wordpress/compose';
 import { unlock } from '../../lock-unlock';
 import ItemActions from '../../components/dataviews-item-actions';
 import DataViewsSelectionCheckbox from '../../components/dataviews-selection-checkbox';
+import DataViewsContext from '../../components/dataviews-context';
 import {
 	useHasAPossibleBulkAction,
 	useSomeItemHasAPossibleBulkAction,
@@ -37,7 +39,6 @@ import type {
 } from '../../types';
 import type { SetSelection } from '../../private-types';
 import { ItemClickWrapper } from '../utils/item-click-wrapper';
-import { useUpdatedPreviewSizeOnViewportChange } from './preview-size-picker';
 const { Badge } = unlock( componentsPrivateApis );
 
 interface GridItemProps< Item > {
@@ -60,6 +61,9 @@ interface GridItemProps< Item > {
 	regularFields: NormalizedField< Item >[];
 	badgeFields: NormalizedField< Item >[];
 	hasBulkActions: boolean;
+	config: {
+		sizes: string;
+	};
 }
 
 function GridItem< Item >( {
@@ -78,6 +82,7 @@ function GridItem< Item >( {
 	regularFields,
 	badgeFields,
 	hasBulkActions,
+	config,
 }: GridItemProps< Item > ) {
 	const { showTitle = true, showMedia = true, showDescription = true } = view;
 	const hasBulkAction = useHasAPossibleBulkAction( actions, item );
@@ -85,7 +90,11 @@ function GridItem< Item >( {
 	const instanceId = useInstanceId( GridItem );
 	const isSelected = selection.includes( id );
 	const renderedMediaField = mediaField?.render ? (
-		<mediaField.render item={ item } field={ mediaField } />
+		<mediaField.render
+			item={ item }
+			field={ mediaField }
+			config={ config }
+		/>
 	) : null;
 	const renderedTitleField =
 		showTitle && titleField?.render ? (
@@ -117,7 +126,7 @@ function GridItem< Item >( {
 				'is-selected': hasBulkAction && isSelected,
 			} ) }
 			onClickCapture={ ( event ) => {
-				if ( event.ctrlKey || event.metaKey ) {
+				if ( isAppleOS() ? event.metaKey : event.ctrlKey ) {
 					event.stopPropagation();
 					event.preventDefault();
 					if ( ! hasBulkAction ) {
@@ -255,6 +264,7 @@ function ViewGrid< Item >( {
 	view,
 	className,
 }: ViewGridProps< Item > ) {
+	const { resizeObserverRef } = useContext( DataViewsContext );
 	const titleField = fields.find(
 		( field ) => field.id === view?.titleField
 	);
@@ -285,14 +295,15 @@ function ViewGrid< Item >( {
 		{ regularFields: [], badgeFields: [] }
 	);
 	const hasData = !! data?.length;
-	const updatedPreviewSize = useUpdatedPreviewSizeOnViewportChange();
 	const hasBulkActions = useSomeItemHasAPossibleBulkAction( actions, data );
-	const usedPreviewSize = updatedPreviewSize || view.layout?.previewSize;
-	const gridStyle = usedPreviewSize
-		? {
-				gridTemplateColumns: `repeat(${ usedPreviewSize }, minmax(0, 1fr))`,
-		  }
-		: {};
+	const usedPreviewSize = view.layout?.previewSize;
+	/*
+	 * This is the maximum width that an image can achieve in the grid. The reasoning is:
+	 * The biggest min image width available is 430px (see /dataviews-layouts/grid/preview-size-picker.tsx).
+	 * Because the grid is responsive, once there is room for another column, the images shrink to accommodate it.
+	 * So each image will never grow past 2*430px plus a little more to account for the gaps.
+	 */
+	const size = '900px';
 
 	const groupField = view.groupByField
 		? fields.find( ( f ) => f.id === view.groupByField )
@@ -327,16 +338,18 @@ function ViewGrid< Item >( {
 											groupName
 										) }
 									</h3>
-									<Grid
-										gap={ 8 }
-										columns={ 2 }
-										alignment="top"
+									<div
 										className={ clsx(
 											'dataviews-view-grid',
 											className
 										) }
-										style={ gridStyle }
+										style={ {
+											gridTemplateColumns:
+												usedPreviewSize &&
+												`repeat(auto-fill, minmax(${ usedPreviewSize }px, 1fr))`,
+										} }
 										aria-busy={ isLoading }
+										ref={ resizeObserverRef }
 									>
 										{ groupItems.map( ( item ) => {
 											return (
@@ -369,10 +382,13 @@ function ViewGrid< Item >( {
 													hasBulkActions={
 														hasBulkActions
 													}
+													config={ {
+														sizes: size,
+													} }
 												/>
 											);
 										} ) }
-									</Grid>
+									</div>
 								</VStack>
 							)
 						) }
@@ -383,13 +399,15 @@ function ViewGrid< Item >( {
 			{
 				// Render a single grid with all data.
 				hasData && ! dataByGroup && (
-					<Grid
-						gap={ 8 }
-						columns={ 2 }
-						alignment="top"
+					<div
 						className={ clsx( 'dataviews-view-grid', className ) }
-						style={ gridStyle }
+						style={ {
+							gridTemplateColumns:
+								usedPreviewSize &&
+								`repeat(auto-fill, minmax(${ usedPreviewSize }px, 1fr))`,
+						} }
 						aria-busy={ isLoading }
+						ref={ resizeObserverRef }
 					>
 						{ data.map( ( item ) => {
 							return (
@@ -410,10 +428,13 @@ function ViewGrid< Item >( {
 									regularFields={ regularFields }
 									badgeFields={ badgeFields }
 									hasBulkActions={ hasBulkActions }
+									config={ {
+										sizes: size,
+									} }
 								/>
 							);
 						} ) }
-					</Grid>
+					</div>
 				)
 			}
 			{
