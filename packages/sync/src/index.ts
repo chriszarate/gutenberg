@@ -60,4 +60,25 @@ export { Awareness } from 'y-protocols/awareness';
  */
 export { privateApis } from './private-apis';
 
+/**
+ * Suggestion mode exports for tracking and managing suggested changes.
+ */
+export {
+	SuggestionModeManager,
+	cloneYDoc,
+	createEncodedSnapshot,
+	createSuggestionAttributionManager,
+	decodeSnapshot,
+	extractAttributedChanges,
+	hasPendingChanges,
+	restoreFromDoc,
+} from './suggestions';
+export type {
+	AttributedChange,
+	ISuggestionModeManager,
+	SuggestionModeChangeCallback,
+	SuggestionModeManagerOptions,
+	SuggestionModeState,
+} from './suggestions';
+
 export type * from './types';

@@ -20,6 +20,8 @@ module.exports = {
 		'@wordpress/theme/design-tokens.js':
 			'<rootDir>/packages/theme/src/prebuilt/js/design-tokens.mjs',
 		'.+\\.wasm$': '<rootDir>/test/unit/config/wasm-stub.js',
+		// Map yjs to the sync package's built version (for Yjs 14 from GitHub)
+		'^yjs$': '<rootDir>/packages/sync/node_modules/yjs',
 	},
 	preset: '@wordpress/jest-preset-default',
 	setupFiles: [

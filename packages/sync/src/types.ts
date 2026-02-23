@@ -13,6 +13,7 @@ import type { Awareness } from 'y-protocols/awareness';
  * Internal dependencies
  */
 import type { WORDPRESS_META_KEY_FOR_CRDT_DOC_PERSISTENCE } from './config';
+import type { ISuggestionModeManager } from './suggestions/types';
 
 /* globalThis */
 declare global {
@@ -93,6 +94,8 @@ export interface SyncConfig {
 		editedRecord: ObjectData
 	) => ObjectData;
 	supports?: Record< string, true >;
+	/** Whether this entity type supports suggestion mode. */
+	supportsSuggestions?: boolean;
 }
 
 export interface SyncManager {
@@ -104,6 +107,11 @@ export interface SyncManager {
 		objectType: ObjectType,
 		objectId: ObjectID
 	) => State | undefined;
+	/** Get the suggestion mode manager for an entity, if suggestions are supported. */
+	getSuggestionModeManager: (
+		objectType: ObjectType,
+		objectId: ObjectID
+	) => ISuggestionModeManager | undefined;
 	load: (
 		syncConfig: SyncConfig,
 		objectType: ObjectType,

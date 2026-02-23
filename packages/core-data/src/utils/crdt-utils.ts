@@ -30,7 +30,9 @@ export type YMapRecord = Record< string, unknown >;
  * `instanceof` checks against Y.Map continue to work at runtime but will blur
  * the type at compile time. To navigate this, use the `isYMap` function below.
  */
-export interface YMapWrap< T extends YMapRecord > extends Y.AbstractType< T > {
+// Note: In Yjs 14, AbstractType has a delta constraint, so we use 'any' here.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface YMapWrap< T extends YMapRecord > extends Y.AbstractType< any, any > {
 	delete: < K extends keyof T >( key: K ) => void;
 	forEach: (
 		callback: (

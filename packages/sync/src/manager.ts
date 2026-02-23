@@ -29,6 +29,8 @@ import type {
 	SyncManagerUpdateOptions,
 	SyncUndoManager,
 } from './types';
+import { SuggestionModeManager } from './suggestions';
+import type { ISuggestionModeManager } from './suggestions/types';
 import { createUndoManager } from './undo-manager';
 import { createYjsDoc, markEntityAsSaved } from './utils';
 
@@ -58,6 +60,8 @@ interface EntityState {
 export function createSyncManager(): SyncManager {
 	const collectionStates: Map< ObjectType, CollectionState > = new Map();
 	const entityStates: Map< EntityID, EntityState > = new Map();
+	const suggestionModeManagers: Map< EntityID, ISuggestionModeManager > =
+		new Map();
 
 	/**
 	 * A "sync-aware" undo manager for all synced entities. It is lazily created
@@ -128,6 +132,14 @@ export function createSyncManager(): SyncManager {
 			providerResults.forEach( ( result ) => result.destroy() );
 			recordMap.unobserveDeep( onRecordUpdate );
 			recordMetaMap.unobserve( onRecordMetaUpdate );
+
+			// Clean up suggestion mode manager if it exists.
+			const suggestionManager = suggestionModeManagers.get( entityId );
+			if ( suggestionManager ) {
+				suggestionManager.destroy();
+				suggestionModeManagers.delete( entityId );
+			}
+
 			ydoc.destroy();
 			entityStates.delete( entityId );
 		};
@@ -152,14 +164,14 @@ export function createSyncManager(): SyncManager {
 		};
 
 		const onRecordMetaUpdate = (
-			event: Y.YMapEvent< unknown >,
+			event: Y.YEvent< Y.Map< unknown > >,
 			transaction: Y.Transaction
 		) => {
 			if ( transaction.local ) {
 				return;
 			}
 
-			event.keysChanged.forEach( ( key ) => {
+			event.keysChanged.forEach( ( key: string ) => {
 				switch ( key ) {
 					case SAVED_AT_KEY:
 						const newValue = recordMetaMap.get( SAVED_AT_KEY );
@@ -195,6 +207,15 @@ export function createSyncManager(): SyncManager {
 		};
 
 		entityStates.set( entityId, entityState );
+
+		// Create suggestion mode manager if supported.
+		if ( syncConfig.supportsSuggestions ) {
+			const suggestionManager = new SuggestionModeManager( {
+				ydoc,
+				awareness,
+			} );
+			suggestionModeManagers.set( entityId, suggestionManager );
+		}
 
 		// Create providers for the given entity and its Yjs document.
 		const providerResults = await Promise.all(
@@ -246,14 +267,14 @@ export function createSyncManager(): SyncManager {
 		};
 
 		const onRecordMetaUpdate = (
-			event: Y.YMapEvent< unknown >,
+			event: Y.YEvent< Y.Map< unknown > >,
 			transaction: Y.Transaction
 		) => {
 			if ( transaction.local ) {
 				return;
 			}
 
-			event.keysChanged.forEach( ( key ) => {
+			event.keysChanged.forEach( ( key: string ) => {
 				switch ( key ) {
 					case SAVED_AT_KEY:
 						const newValue = recordMetaMap.get( SAVED_AT_KEY );
@@ -556,9 +577,25 @@ export function createSyncManager(): SyncManager {
 		return createPersistedCRDTDoc( entityState.ydoc );
 	}
 
+	/**
+	 * Get the suggestion mode manager for an entity, if suggestions are supported.
+	 *
+	 * @param {ObjectType} objectType Object type.
+	 * @param {ObjectID}   objectId   Object ID.
+	 * @return {ISuggestionModeManager | undefined} The suggestion mode manager, or undefined.
+	 */
+	function getSuggestionModeManager(
+		objectType: ObjectType,
+		objectId: ObjectID
+	): ISuggestionModeManager | undefined {
+		const entityId = getEntityId( objectType, objectId );
+		return suggestionModeManagers.get( entityId );
+	}
+
 	return {
 		createMeta: createEntityMeta,
 		getAwareness,
+		getSuggestionModeManager,
 		load: loadEntity,
 		loadCollection,
 		// Use getter to ensure we always return the current value of `undoManager`.

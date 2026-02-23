@@ -72,8 +72,9 @@ function createCompactionUpdate( updates: SyncUpdate[] ): SyncUpdate {
 		.map( ( u ) => base64ToUint8Array( u.data ) );
 
 	// Merge all updates while preserving operation metadata.
+	// Cast to Uint8Array<ArrayBuffer>[] for Yjs 14 compatibility.
 	return createSyncUpdate(
-		Y.mergeUpdates( mergeable ),
+		Y.mergeUpdates( mergeable as Uint8Array< ArrayBuffer >[] ),
 		SyncUpdateType.COMPACTION
 	);
 }

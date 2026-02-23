@@ -466,6 +466,62 @@ function isRichTextAttribute(
 let localDoc: Y.Doc;
 
 /**
+ * Convert a lib0 Delta (from Yjs 14's getContent()) to Quill Delta ops format.
+ * lib0 Delta uses a linked list structure with `children`, while Quill Delta
+ * expects an `ops` array.
+ *
+ * @param lib0Delta The lib0 Delta from Y.Text.getContent().
+ * @return An array of Quill Delta ops.
+ */
+interface QuillDeltaOp {
+	insert?: string | Record< string, unknown >;
+	delete?: number;
+	retain?: number | Record< string, unknown >;
+	attributes?: Record< string, unknown >;
+}
+
+// lib0 Delta types from Yjs 14 have complex generic types.
+// We use a simplified interface that matches what we actually need.
+interface Lib0DeltaChildren {
+	forEach: ( fn: ( op: unknown ) => void ) => void;
+}
+
+function lib0DeltaToQuillOps(
+	lib0Delta: { children: Lib0DeltaChildren }
+): QuillDeltaOp[] {
+	const ops: QuillDeltaOp[] = [];
+
+	lib0Delta.children.forEach( ( rawOp: unknown ) => {
+		const op = rawOp as {
+			insert?: string | unknown[];
+			delete?: number;
+			retain?: number;
+			format?: Record< string, unknown > | null;
+			type?: string;
+		};
+		const quillOp: QuillDeltaOp = {};
+
+		if ( op.insert !== undefined ) {
+			// Handle text insert
+			quillOp.insert = op.insert as string;
+		} else if ( op.delete !== undefined ) {
+			quillOp.delete = op.delete;
+		} else if ( op.retain !== undefined ) {
+			quillOp.retain = op.retain;
+		}
+
+		// Convert 'format' to 'attributes' (Quill Delta convention)
+		if ( op.format ) {
+			quillOp.attributes = op.format;
+		}
+
+		ops.push( quillOp );
+	} );
+
+	return ops;
+}
+
+/**
  * Given a Y.Text object and an updated string value, diff the new value and
  * apply the delta to the Y.Text.
  *
@@ -497,12 +553,51 @@ function mergeRichTextUpdate(
 	localYText.delete( 0, localYText.length );
 	localYText.insert( 0, updatedValue );
 
-	const currentValueAsDelta = new Delta( blockYText.toDelta() );
-	const updatedValueAsDelta = new Delta( localYText.toDelta() );
+	// Convert lib0 Delta format (linked list with children) to Quill Delta format (ops array)
+	const currentValueAsDelta = new Delta(
+		lib0DeltaToQuillOps( blockYText.getContent() )
+	);
+	const updatedValueAsDelta = new Delta(
+		lib0DeltaToQuillOps( localYText.getContent() )
+	);
 	const deltaDiff = currentValueAsDelta.diffWithCursor(
 		updatedValueAsDelta,
 		cursorPosition
 	);
 
-	blockYText.applyDelta( deltaDiff.ops );
+	// Apply the diff operations directly to Y.Text using insert/delete methods.
+	// In Yjs 14, applyDelta expects a lib0 Delta, not a Quill Delta ops array.
+	applyQuillDeltaOpsToYText( blockYText, deltaDiff.ops );
+}
+
+/**
+ * Apply Quill Delta ops to a Y.Text instance.
+ * This replaces the use of applyDelta which changed in Yjs 14 to expect lib0 Delta.
+ *
+ * @param ytext The Y.Text to apply ops to.
+ * @param ops   The Quill Delta ops to apply.
+ */
+function applyQuillDeltaOpsToYText(
+	ytext: Y.Text,
+	ops: QuillDeltaOp[]
+): void {
+	let index = 0;
+
+	for ( const op of ops ) {
+		if ( op.insert !== undefined ) {
+			const text =
+				typeof op.insert === 'string' ? op.insert : String( op.insert );
+			ytext.insert( index, text, op.attributes || undefined );
+			index += text.length;
+		} else if ( op.delete !== undefined ) {
+			ytext.delete( index, op.delete );
+			// Note: index doesn't change after delete
+		} else if ( op.retain !== undefined && typeof op.retain === 'number' ) {
+			// Only handle numeric retain (skip embed retain which is an object)
+			if ( op.attributes ) {
+				ytext.format( index, op.retain, op.attributes );
+			}
+			index += op.retain;
+		}
+	}
 }

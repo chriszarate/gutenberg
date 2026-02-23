@@ -58,3 +58,24 @@ export const LOCAL_SYNC_MANAGER_ORIGIN = 'syncManager';
  * WordPress meta key used to persist the CRDT document for an entity.
  */
 export const WORDPRESS_META_KEY_FOR_CRDT_DOC_PERSISTENCE = '_crdt_document';
+
+/**
+ * Root-level key for the map that holds suggestion mode metadata.
+ * This map is transient and should not be persisted.
+ */
+export const CRDT_SUGGESTION_META_MAP_KEY = 'suggestionMeta';
+
+/**
+ * Y.Map key for the baseline snapshot in suggestion mode.
+ */
+export const SUGGESTION_BASELINE_KEY = 'baselineSnapshot';
+
+/**
+ * Y.Map key for the timestamp when suggestion mode was started.
+ */
+export const SUGGESTION_STARTED_AT_KEY = 'startedAt';
+
+/**
+ * Y.Map key for the client ID of the user who started suggestion mode.
+ */
+export const SUGGESTION_STARTED_BY_KEY = 'startedBy';
