@@ -11,6 +11,8 @@ import {
 	CRDT_RECORD_MAP_KEY,
 	CRDT_STATE_MAP_KEY,
 	CRDT_STATE_MAP_SAVED_AT_KEY as SAVED_AT_KEY,
+	LOCAL_EDITOR_ORIGIN,
+	LOCAL_EDITOR_PASSTHROUGH_ORIGIN,
 	LOCAL_SYNC_MANAGER_ORIGIN,
 } from './config';
 import {
@@ -19,6 +21,10 @@ import {
 	yieldToEventLoop,
 } from './performance';
 import { getProviderCreators } from './providers';
+import {
+	createSuggestionManager,
+	type SuggestionManager as SuggestionManagerType,
+} from './suggestion-manager';
 import type {
 	CollectionHandlers,
 	CRDTDoc,
@@ -29,6 +35,7 @@ import type {
 	MapEvent,
 	ProviderCreator,
 	RecordHandlers,
+	SuggestionMode,
 	SyncConfig,
 	SyncManager,
 	SyncManagerUpdateOptions,
@@ -85,6 +92,7 @@ export function createSyncManager( debug = false ): SyncManager {
 	const debugWrap = debug ? logPerformanceTiming : passThru;
 	const collectionStates: Map< ObjectType, CollectionState > = new Map();
 	const entityStates: Map< EntityID, EntityState > = new Map();
+	const suggestionMgr: SuggestionManagerType = createSuggestionManager();
 
 	/**
 	 * A "sync-aware" undo manager for all synced entities. It is lazily created
@@ -242,8 +250,12 @@ export function createSyncManager( debug = false ): SyncManager {
 		};
 
 		// Lazily create the undo manager when the first entity is loaded.
+		// Pass the suggestion manager's suspend function so undo/redo bypasses
+		// suggestion mode (changes flow directly to currentDoc).
 		if ( ! undoManager ) {
-			undoManager = createUndoManager();
+			undoManager = createUndoManager(
+				() => suggestionMgr.suspendSuggestionMode()
+			);
 		}
 
 		const { addUndoMeta, restoreUndoMeta } = handlers;
@@ -291,6 +303,23 @@ export function createSyncManager( debug = false ): SyncManager {
 
 		// Get and apply the persisted CRDT document, if it exists.
 		internal.applyPersistedCrdtDoc( objectType, objectId, record );
+
+		// Initialize suggestion tracking (creates nextDoc + DiffAttributionManager).
+		// The nextDoc is synced via a separate :suggestions room.
+		log( 'loadEntity', 'initializing suggestions', entityId );
+		const nextDoc = await suggestionMgr.initEntity(
+			entityId,
+			objectType,
+			objectId,
+			ydoc,
+			awareness
+		);
+
+		// Observe the nextDoc's record map for remote suggestion changes.
+		// When a peer sends a suggestion, the nextDoc updates and we need
+		// to refresh the local editor state.
+		const nextRecordMap = nextDoc.get( CRDT_RECORD_MAP_KEY );
+		nextRecordMap.observeDeep( onRecordUpdate );
 	}
 
 	/**
@@ -404,6 +433,7 @@ export function createSyncManager( debug = false ): SyncManager {
 	function unloadEntity( objectType: ObjectType, objectId: ObjectID ): void {
 		const entityId = getEntityId( objectType, objectId );
 		log( 'unloadEntity', 'unloading', entityId );
+		suggestionMgr.destroyEntity( entityId );
 		entityStates.get( entityId )?.unload();
 		updateCRDTDoc( objectType, null, {}, origin, { isSave: true } );
 	}
@@ -560,6 +590,13 @@ export function createSyncManager( debug = false ): SyncManager {
 		if ( entityState ) {
 			const { syncConfig, ydoc } = entityState;
 
+			// Determine if we should write to the nextDoc (suggestion doc)
+			// instead of the currentDoc. When suggestion tracking is active,
+			// the editor always writes to nextDoc. The DiffAttributionManager
+			// controls whether changes propagate to currentDoc.
+			const nextDoc = suggestionMgr.getNextDoc( entityId );
+			const targetDoc = nextDoc ?? ydoc;
+
 			// If this is change should create a new undo level, tell the undo
 			// manager to stop capturing and create a new undo group.
 			// We can't do this in the undo manager itself, because addRecord() is
@@ -569,16 +606,70 @@ export function createSyncManager( debug = false ): SyncManager {
 				undoManager.stopCapturing?.();
 			}
 
-			ydoc.transact( () => {
-				log( 'updateCRDTDoc', 'applying changes', entityId, {
-					changedKeys: Object.keys( changes ),
-				} );
-				syncConfig.applyChangesToCRDTDoc( ydoc, changes );
+			const mode = suggestionMgr.getMode( entityId );
 
-				if ( isSave ) {
-					markEntityAsSaved( ydoc );
+			if ( nextDoc && mode === 'suggesting' ) {
+				// In suggesting mode, split changes: blocks use the editor
+				// origin (blocked by AM) while non-blocks use the passthrough
+				// origin (allowed through AM).
+				const blocksKeys = new Set( [ 'blocks', 'content' ] );
+				const blocksChanges: Partial< ObjectData > = {};
+				const otherChanges: Partial< ObjectData > = {};
+
+				for ( const [ key, value ] of Object.entries( changes ) ) {
+					if ( blocksKeys.has( key ) ) {
+						blocksChanges[ key ] = value;
+					} else {
+						otherChanges[ key ] = value;
+					}
 				}
-			}, origin );
+
+				// Apply non-blocks changes with passthrough origin (always flows through).
+				if ( Object.keys( otherChanges ).length > 0 ) {
+					targetDoc.transact( () => {
+						log( 'updateCRDTDoc', 'applying passthrough changes', entityId, {
+							changedKeys: Object.keys( otherChanges ),
+						} );
+						syncConfig.applyChangesToCRDTDoc( targetDoc, otherChanges );
+					}, LOCAL_EDITOR_PASSTHROUGH_ORIGIN );
+				}
+
+				// Apply blocks changes with editor origin (blocked by AM in suggesting mode).
+				if ( Object.keys( blocksChanges ).length > 0 ) {
+					targetDoc.transact( () => {
+						log( 'updateCRDTDoc', 'applying suggestion changes', entityId, {
+							changedKeys: Object.keys( blocksChanges ),
+						} );
+						syncConfig.applyChangesToCRDTDoc( targetDoc, blocksChanges );
+					}, origin );
+				}
+
+				// Save is applied to the currentDoc (the canonical version).
+				if ( isSave ) {
+					ydoc.transact( () => {
+						markEntityAsSaved( ydoc );
+					}, origin );
+				}
+			} else {
+				// In editing mode or without suggestion tracking: apply all at once.
+				targetDoc.transact( () => {
+					log( 'updateCRDTDoc', 'applying changes', entityId, {
+						changedKeys: Object.keys( changes ),
+					} );
+					syncConfig.applyChangesToCRDTDoc( targetDoc, changes );
+
+					if ( isSave ) {
+						markEntityAsSaved( targetDoc );
+					}
+				}, origin );
+
+				// If writing to nextDoc in editing mode, also mark currentDoc as saved.
+				if ( isSave && nextDoc && targetDoc !== ydoc ) {
+					ydoc.transact( () => {
+						markEntityAsSaved( ydoc );
+					}, origin );
+				}
+			}
 		}
 
 		if ( collectionState && isSave ) {
@@ -609,11 +700,21 @@ export function createSyncManager( debug = false ): SyncManager {
 
 		const { handlers, syncConfig, ydoc } = entityState;
 
+		// When suggestion tracking is active, read from nextDoc (which
+		// includes pending suggestions) instead of currentDoc.
+		const nextDoc = suggestionMgr.getNextDoc( entityId );
+		const readDoc = nextDoc ?? ydoc;
+
+		// Pass the DiffAttributionManager so the sync config can generate
+		// suggestion markup for rich-text attributes when in suggesting mode.
+		const am = suggestionMgr.getAttributionManager( entityId );
+
 		// Determine which synced properties have actually changed by comparing
 		// them against the current edited entity record.
 		const changes = syncConfig.getChangesFromCRDTDoc(
-			ydoc,
-			await handlers.getEditedRecord()
+			readDoc,
+			await handlers.getEditedRecord(),
+			am
 		);
 
 		const changedKeys = Object.keys( changes );
@@ -659,12 +760,56 @@ export function createSyncManager( debug = false ): SyncManager {
 		updateEntityRecord: debugWrap( _updateEntityRecord ),
 	};
 
+	// Suggestion mode API methods.
+	function setSuggestionMode(
+		objectType: ObjectType,
+		objectId: ObjectID,
+		mode: SuggestionMode
+	): void {
+		const entityId = getEntityId( objectType, objectId );
+		suggestionMgr.setMode( entityId, mode );
+	}
+
+	function getSuggestionMode(
+		objectType: ObjectType,
+		objectId: ObjectID
+	): SuggestionMode {
+		const entityId = getEntityId( objectType, objectId );
+		return suggestionMgr.getMode( entityId );
+	}
+
+	function acceptAllSuggestions(
+		objectType: ObjectType,
+		objectId: ObjectID
+	): void {
+		const entityId = getEntityId( objectType, objectId );
+		suggestionMgr.acceptAll( entityId );
+		// After accepting, update the entity record so the editor reflects
+		// the accepted content.
+		void internal.updateEntityRecord( objectType, objectId );
+	}
+
+	function rejectAllSuggestions(
+		objectType: ObjectType,
+		objectId: ObjectID
+	): void {
+		const entityId = getEntityId( objectType, objectId );
+		suggestionMgr.rejectAll( entityId );
+		// After rejecting, update the entity record so the editor reflects
+		// the original content.
+		void internal.updateEntityRecord( objectType, objectId );
+	}
+
 	// Wrap and return the public API.
 	return {
+		acceptAllSuggestions,
 		createPersistedCRDTDoc: debugWrap( createPersistedCRDTDoc ),
 		getAwareness,
+		getSuggestionMode,
 		load: debugWrap( loadEntity ),
 		loadCollection: debugWrap( loadCollection ),
+		rejectAllSuggestions,
+		setSuggestionMode,
 		// Use getter to ensure we always return the current value of `undoManager`.
 		get undoManager(): SyncUndoManager | undefined {
 			return undoManager;

@@ -142,10 +142,18 @@ export interface SyncConfig {
 	) => Awareness | undefined;
 	getChangesFromCRDTDoc: (
 		ydoc: Y.Doc,
-		editedRecord: ObjectData
+		editedRecord: ObjectData,
+		am?: Y.DiffAttributionManager
 	) => ObjectData;
 	getPersistedCRDTDoc?: ( record: ObjectData ) => string | null;
 }
+
+/**
+ * The suggestion mode for a given entity.
+ * - 'editing': Changes flow through to currentDoc (no suggestions created).
+ * - 'suggesting': Changes stay in nextDoc only (suggestions are created).
+ */
+export type SuggestionMode = 'editing' | 'suggesting';
 
 export interface SyncManager {
 	createPersistedCRDTDoc: (
@@ -177,6 +185,25 @@ export interface SyncManager {
 		changes: Partial< ObjectData >,
 		origin: string,
 		options?: SyncManagerUpdateOptions
+	) => void;
+
+	// Suggestion mode API.
+	setSuggestionMode: (
+		objectType: ObjectType,
+		objectId: ObjectID,
+		mode: SuggestionMode
+	) => void;
+	getSuggestionMode: (
+		objectType: ObjectType,
+		objectId: ObjectID
+	) => SuggestionMode;
+	acceptAllSuggestions: (
+		objectType: ObjectType,
+		objectId: ObjectID
+	) => void;
+	rejectAllSuggestions: (
+		objectType: ObjectType,
+		objectId: ObjectID
 	) => void;
 }
 

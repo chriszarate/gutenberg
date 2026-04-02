@@ -47,6 +47,7 @@ import {
 	type YMapRecord,
 	type YMap,
 } from './crdt-utils';
+import { yMapToJSONWithSuggestions } from './crdt-suggestions';
 
 // Changes that can be applied to a post entity record.
 export type PostChanges = Partial< Post > & {
@@ -280,14 +281,22 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
 export function getPostChangesFromCRDTDoc(
 	ydoc: CRDTDoc,
 	editedRecord: Post,
-	syncedProperties: Set< string >
+	syncedProperties: Set< string >,
+	am?: Y.DiffAttributionManager
 ): PostChanges {
 	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
+
+	// When a DiffAttributionManager is provided, use suggestion-aware
+	// serialization so that Y.Text values include <ins>/<del> markup for
+	// pending suggestions.
+	const serialized = am
+		? yMapToJSONWithSuggestions( ymap, am )
+		: yMapToJSON( ymap );
 
 	let allowedMetaChanges: Post[ 'meta' ] = {};
 
 	const changes = Object.fromEntries(
-		Object.entries( yMapToJSON( ymap ) ).filter( ( [ key, newValue ] ) => {
+		Object.entries( serialized ).filter( ( [ key, newValue ] ) => {
 			if ( ! syncedProperties.has( key ) ) {
 				return false;
 			}

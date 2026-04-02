@@ -11,7 +11,7 @@ import type { HistoryRecord } from '@wordpress/undo-manager';
 /**
  * Internal dependencies
  */
-import { LOCAL_EDITOR_ORIGIN } from './config';
+import { LOCAL_EDITOR_ORIGIN, LOCAL_EDITOR_PASSTHROUGH_ORIGIN } from './config';
 import { YMultiDocUndoManager } from './y-utilities/y-multidoc-undomanager';
 import type { ObjectData, RecordHandlers, SyncUndoManager } from './types';
 
@@ -28,15 +28,20 @@ interface StackItemEvent {
  * CRDT documents (one per entity) and giving each peer their own undo/redo stack
  * without conflicts.
  */
-export function createUndoManager(): SyncUndoManager {
+export function createUndoManager(
+	onBeforeUndoRedo?: () => () => void
+): SyncUndoManager {
 	const yUndoManager = new YMultiDocUndoManager( [], {
 		// Throttle undo/redo captures after 500ms of inactivity.
 		// 500 was selected from subjective local UX testing, shorter timeouts
 		// may cause mid-word undo stack items.
 		captureTimeout: 500,
 		// Ensure that we only scope the undo/redo to the current editor.
-		// The yjs document's clientID is added once it's available.
-		trackedOrigins: new Set( [ LOCAL_EDITOR_ORIGIN ] ),
+		// Track both origins so undo works for both blocks and passthrough changes.
+		trackedOrigins: new Set( [
+			LOCAL_EDITOR_ORIGIN,
+			LOCAL_EDITOR_PASSTHROUGH_ORIGIN,
+		] ),
 	} );
 
 	return {
@@ -96,8 +101,16 @@ export function createUndoManager(): SyncUndoManager {
 				return;
 			}
 
+			// Temporarily suspend suggestion mode so that undo operations flow
+			// directly to currentDoc. Without this, undoing in suggesting mode
+			// would create a new suggestion that reverses the previous one.
+			const restore = onBeforeUndoRedo?.();
+
 			// Perform the undo operation
 			yUndoManager.undo();
+
+			// Restore suggestion mode.
+			restore?.();
 
 			// Intentionally return an empty array, because the SyncProvider will update
 			// the entity record based on the Yjs document changes.
@@ -112,8 +125,15 @@ export function createUndoManager(): SyncUndoManager {
 				return;
 			}
 
+			// Temporarily suspend suggestion mode so that redo operations flow
+			// directly to currentDoc.
+			const restore = onBeforeUndoRedo?.();
+
 			// Perform the redo operation
 			yUndoManager.redo();
+
+			// Restore suggestion mode.
+			restore?.();
 
 			// Intentionally return an empty array, because the SyncProvider will update
 			// the entity record based on the Yjs document changes.
