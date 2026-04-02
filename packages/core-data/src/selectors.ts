@@ -54,6 +54,7 @@ export interface State {
 	editorAssets: Record< string, any > | null;
 	syncConnectionStatuses?: Record< string, ConnectionStatus >;
 	collaborationSupported: boolean;
+	suggestionModes: Record< string, string >;
 	viewConfigs: Record< string, Record< string, any > >;
 }
 
