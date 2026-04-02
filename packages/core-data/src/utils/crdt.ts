@@ -47,7 +47,7 @@ import {
 	type YMapRecord,
 	type YMap,
 } from './crdt-utils';
-import { yMapToJSONWithSuggestions } from './crdt-suggestions';
+import { serializeWithSuggestions } from './crdt-suggestions';
 
 // Changes that can be applied to a post entity record.
 export type PostChanges = Partial< Post > & {
@@ -273,9 +273,10 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
  * against the local record and determine if there are changes (edits) we want
  * to dispatch.
  *
- * @param {CRDTDoc}     ydoc
- * @param {Post}        editedRecord
- * @param {Set<string>} syncedProperties
+ * @param {CRDTDoc}                  ydoc
+ * @param {Post}                     editedRecord
+ * @param {Set<string>}              syncedProperties
+ * @param {Y.DiffAttributionManager} am
  * @return {Partial<PostChanges>} The changes that should be applied to the local record.
  */
 export function getPostChangesFromCRDTDoc(
@@ -286,12 +287,20 @@ export function getPostChangesFromCRDTDoc(
 ): PostChanges {
 	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
 
-	// When a DiffAttributionManager is provided, use suggestion-aware
-	// serialization so that Y.Text values include <ins>/<del> markup for
-	// pending suggestions.
-	const serialized = am
-		? yMapToJSONWithSuggestions( ymap, am )
-		: yMapToJSON( ymap );
+	// Always serialize the top-level map without suggestion markup so that
+	// non-block Y.Text fields (content, title, excerpt) remain clean.
+	const serialized = yMapToJSON( ymap );
+
+	// When an AM is provided, re-serialize only the blocks field with
+	// suggestion markup so that block rich-text attributes include
+	// <ins>/<del> annotations for the format library to render.
+	if ( am ) {
+		const blocksValue = ymap.getAttr( 'blocks' );
+		if ( blocksValue && isYArray( blocksValue ) ) {
+			( serialized as Record< string, unknown > ).blocks =
+				serializeWithSuggestions( blocksValue, am );
+		}
+	}
 
 	let allowedMetaChanges: Post[ 'meta' ] = {};
 

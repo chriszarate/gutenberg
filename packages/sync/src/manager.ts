@@ -11,15 +11,10 @@ import {
 	CRDT_RECORD_MAP_KEY,
 	CRDT_STATE_MAP_KEY,
 	CRDT_STATE_MAP_SAVED_AT_KEY as SAVED_AT_KEY,
-	LOCAL_EDITOR_ORIGIN,
 	LOCAL_EDITOR_PASSTHROUGH_ORIGIN,
 	LOCAL_SYNC_MANAGER_ORIGIN,
 } from './config';
-import {
-	logPerformanceTiming,
-	passThru,
-	yieldToEventLoop,
-} from './performance';
+import { logPerformanceTiming, passThru } from './performance';
 import { getProviderCreators } from './providers';
 import {
 	createSuggestionManager,
@@ -93,6 +88,37 @@ export function createSyncManager( debug = false ): SyncManager {
 	const collectionStates: Map< ObjectType, CollectionState > = new Map();
 	const entityStates: Map< EntityID, EntityState > = new Map();
 	const suggestionMgr: SuggestionManagerType = createSuggestionManager();
+
+	// A flushable deferred queue for CRDT document updates. Each call to
+	// the public `update` method enqueues the write and schedules a flush
+	// via setTimeout(0). `flushPendingUpdates` can be called synchronously
+	// (e.g. before a suggestion-mode switch) to execute all pending writes
+	// immediately, ensuring they run under the correct suggestion mode.
+	let pendingUpdates: Array< () => void > = [];
+	let updateTimer: ReturnType< typeof setTimeout > | null = null;
+
+	function flushPendingUpdates(): void {
+		if ( updateTimer !== null ) {
+			clearTimeout( updateTimer );
+			updateTimer = null;
+		}
+		const updates = pendingUpdates;
+		pendingUpdates = [];
+		for ( const update of updates ) {
+			update();
+		}
+	}
+
+	function deferredUpdateCRDTDoc(
+		...args: Parameters< typeof updateCRDTDoc >
+	): void {
+		pendingUpdates.push( () => {
+			updateCRDTDoc( ...args );
+		} );
+		if ( updateTimer === null ) {
+			updateTimer = setTimeout( flushPendingUpdates, 0 );
+		}
+	}
 
 	/**
 	 * A "sync-aware" undo manager for all synced entities. It is lazily created
@@ -210,8 +236,15 @@ export function createSyncManager( debug = false ): SyncManager {
 		// If the sync config supports awareness, create it.
 		const awareness = syncConfig.createAwareness?.( ydoc, objectId );
 
-		// When the CRDT document is updated by an UndoManager or a connection (not
-		// a local origin), update the local store.
+		// When the CRDT document is updated by an UndoManager or a connection
+		// (not a local origin), update the local store. In suggesting mode,
+		// local changes also need a read-back so the editor can display
+		// suggestion markup (<ins>/<del>). A re-entrancy guard prevents
+		// infinite cycles: the read-back sends marked-up blocks to the
+		// editor, whose write-back strips the markup (via
+		// mergeRichTextUpdate), producing a CRDT no-op.
+		let isLocalSuggestionReadBack = false;
+
 		const onRecordUpdate = (
 			_event: MapEvent,
 			transaction: Y.Transaction
@@ -220,6 +253,17 @@ export function createSyncManager( debug = false ): SyncManager {
 				transaction.local &&
 				! ( transaction.origin instanceof Y.UndoManager )
 			) {
+				if (
+					suggestionMgr.getMode( entityId ) === 'suggesting' &&
+					! isLocalSuggestionReadBack
+				) {
+					isLocalSuggestionReadBack = true;
+					void internal
+						.updateEntityRecord( objectType, objectId )
+						.finally( () => {
+							isLocalSuggestionReadBack = false;
+						} );
+				}
 				return;
 			}
 
@@ -253,8 +297,8 @@ export function createSyncManager( debug = false ): SyncManager {
 		// Pass the suggestion manager's suspend function so undo/redo bypasses
 		// suggestion mode (changes flow directly to currentDoc).
 		if ( ! undoManager ) {
-			undoManager = createUndoManager(
-				() => suggestionMgr.suspendSuggestionMode()
+			undoManager = createUndoManager( () =>
+				suggestionMgr.suspendSuggestionMode()
 			);
 		}
 
@@ -627,20 +671,36 @@ export function createSyncManager( debug = false ): SyncManager {
 				// Apply non-blocks changes with passthrough origin (always flows through).
 				if ( Object.keys( otherChanges ).length > 0 ) {
 					targetDoc.transact( () => {
-						log( 'updateCRDTDoc', 'applying passthrough changes', entityId, {
-							changedKeys: Object.keys( otherChanges ),
-						} );
-						syncConfig.applyChangesToCRDTDoc( targetDoc, otherChanges );
+						log(
+							'updateCRDTDoc',
+							'applying passthrough changes',
+							entityId,
+							{
+								changedKeys: Object.keys( otherChanges ),
+							}
+						);
+						syncConfig.applyChangesToCRDTDoc(
+							targetDoc,
+							otherChanges
+						);
 					}, LOCAL_EDITOR_PASSTHROUGH_ORIGIN );
 				}
 
 				// Apply blocks changes with editor origin (blocked by AM in suggesting mode).
 				if ( Object.keys( blocksChanges ).length > 0 ) {
 					targetDoc.transact( () => {
-						log( 'updateCRDTDoc', 'applying suggestion changes', entityId, {
-							changedKeys: Object.keys( blocksChanges ),
-						} );
-						syncConfig.applyChangesToCRDTDoc( targetDoc, blocksChanges );
+						log(
+							'updateCRDTDoc',
+							'applying suggestion changes',
+							entityId,
+							{
+								changedKeys: Object.keys( blocksChanges ),
+							}
+						);
+						syncConfig.applyChangesToCRDTDoc(
+							targetDoc,
+							blocksChanges
+						);
 					}, origin );
 				}
 
@@ -766,6 +826,12 @@ export function createSyncManager( debug = false ): SyncManager {
 		objectId: ObjectID,
 		mode: SuggestionMode
 	): void {
+		// Flush any pending CRDT writes so they execute under their
+		// original suggestion mode. Without this, a write initiated in
+		// editing mode could be deferred past the mode switch and
+		// incorrectly treated as a suggestion.
+		flushPendingUpdates();
+
 		const entityId = getEntityId( objectType, objectId );
 		suggestionMgr.setMode( entityId, mode );
 	}
@@ -815,6 +881,6 @@ export function createSyncManager( debug = false ): SyncManager {
 			return undoManager;
 		},
 		unload: debugWrap( unloadEntity ),
-		update: debugWrap( yieldToEventLoop( updateCRDTDoc ) ),
+		update: debugWrap( deferredUpdateCRDTDoc ),
 	};
 }
