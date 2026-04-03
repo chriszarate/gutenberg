@@ -2,8 +2,6 @@
  * External dependencies
  */
 import * as Y from '@y/y';
-import type { Awareness } from '@y/protocols/awareness';
-
 /**
  * Internal dependencies
  */
@@ -58,8 +56,7 @@ export interface SuggestionManager {
 		entityId: EntityID,
 		objectType: ObjectType,
 		objectId: ObjectID,
-		currentDoc: CRDTDoc,
-		awareness?: Awareness
+		currentDoc: CRDTDoc
 	) => Promise< CRDTDoc >;
 
 	/**
@@ -139,8 +136,7 @@ export function createSuggestionManager(): SuggestionManager {
 		entityId: EntityID,
 		objectType: ObjectType,
 		objectId: ObjectID,
-		currentDoc: CRDTDoc,
-		awareness?: Awareness
+		currentDoc: CRDTDoc
 	): Promise< CRDTDoc > {
 		if ( states.has( entityId ) ) {
 			return states.get( entityId )!.nextDoc;
@@ -166,7 +162,10 @@ export function createSuggestionManager(): SuggestionManager {
 			LOCAL_EDITOR_PASSTHROUGH_ORIGIN,
 		];
 
-		// Sync nextDoc via a :suggestions room.
+		// Sync nextDoc via a :suggestions room. Do NOT pass awareness here —
+		// the suggestion room only syncs document state. Sharing the same
+		// awareness instance with both rooms causes duplicate listeners that
+		// emit spurious leave/rejoin events for the current user on load.
 		const providerCreators = getProviderCreators();
 		const providers = await Promise.all(
 			providerCreators.map( async ( create ) => {
@@ -174,7 +173,6 @@ export function createSuggestionManager(): SuggestionManager {
 					objectType,
 					objectId: `${ objectId }:suggestions`,
 					ydoc: nextDoc,
-					awareness,
 				} );
 			} )
 		);

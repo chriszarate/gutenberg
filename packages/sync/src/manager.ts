@@ -374,8 +374,7 @@ export function createSyncManager( debug = false ): SyncManager {
 			entityId,
 			objectType,
 			objectId,
-			ydoc,
-			awareness
+			ydoc
 		);
 
 		// Add nextDoc's record map to the undo scope. The editor writes to
