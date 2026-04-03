@@ -225,6 +225,9 @@ export function createSyncManager( debug = false ): SyncManager {
 		// Clean up providers and in-memory state when the entity is unloaded.
 		const unload = (): void => {
 			log( 'loadEntity', 'unloading', entityId );
+			if ( readBackTimer !== null ) {
+				clearTimeout( readBackTimer );
+			}
 			providerResults.forEach( ( result ) => result.destroy() );
 			handlers.onStatusChange( null );
 			recordMap.unobserveDeep( onRecordUpdate );
@@ -243,7 +246,13 @@ export function createSyncManager( debug = false ): SyncManager {
 		// infinite cycles: the read-back sends marked-up blocks to the
 		// editor, whose write-back strips the markup (via
 		// mergeRichTextUpdate), producing a CRDT no-op.
+		//
+		// The read-back is debounced to avoid cursor jumps during rapid
+		// typing. Without debouncing, each keystroke triggers a full blocks
+		// update with suggestion markup, which can cause the editor to
+		// re-render and lose cursor position.
 		let isLocalSuggestionReadBack = false;
+		let readBackTimer: ReturnType< typeof setTimeout > | null = null;
 
 		const onRecordUpdate = (
 			_event: MapEvent,
@@ -257,12 +266,20 @@ export function createSyncManager( debug = false ): SyncManager {
 					suggestionMgr.getMode( entityId ) === 'suggesting' &&
 					! isLocalSuggestionReadBack
 				) {
-					isLocalSuggestionReadBack = true;
-					void internal
-						.updateEntityRecord( objectType, objectId )
-						.finally( () => {
-							isLocalSuggestionReadBack = false;
-						} );
+					// Debounce: wait for typing to pause before sending
+					// suggestion-marked blocks back to the editor.
+					if ( readBackTimer !== null ) {
+						clearTimeout( readBackTimer );
+					}
+					readBackTimer = setTimeout( () => {
+						readBackTimer = null;
+						isLocalSuggestionReadBack = true;
+						void internal
+							.updateEntityRecord( objectType, objectId )
+							.finally( () => {
+								isLocalSuggestionReadBack = false;
+							} );
+					}, 150 );
 				}
 				return;
 			}
@@ -295,10 +312,12 @@ export function createSyncManager( debug = false ): SyncManager {
 
 		// Lazily create the undo manager when the first entity is loaded.
 		// Pass the suggestion manager's suspend function so undo/redo bypasses
-		// suggestion mode (changes flow directly to currentDoc).
+		// suggestion mode (changes flow directly to currentDoc). The per-doc
+		// UndoManager map is forwarded so suspend can add the UndoManager
+		// origins to AM's suggestionOrigins.
 		if ( ! undoManager ) {
-			undoManager = createUndoManager( () =>
-				suggestionMgr.suspendSuggestionMode()
+			undoManager = createUndoManager( ( undoManagerDocs ) =>
+				suggestionMgr.suspendSuggestionMode( undoManagerDocs )
 			);
 		}
 
@@ -359,10 +378,19 @@ export function createSyncManager( debug = false ): SyncManager {
 			awareness
 		);
 
+		// Add nextDoc's record map to the undo scope. The editor writes to
+		// nextDoc (not currentDoc), so undo must track changes there.
+		// The AM propagation to currentDoc uses its own origin (not in
+		// trackedOrigins) so the currentDoc's UndoManager won't double-capture.
+		const nextRecordMap = nextDoc.get( CRDT_RECORD_MAP_KEY );
+		undoManager.addToScope( nextRecordMap, {
+			addUndoMeta,
+			restoreUndoMeta,
+		} );
+
 		// Observe the nextDoc's record map for remote suggestion changes.
 		// When a peer sends a suggestion, the nextDoc updates and we need
 		// to refresh the local editor state.
-		const nextRecordMap = nextDoc.get( CRDT_RECORD_MAP_KEY );
 		nextRecordMap.observeDeep( onRecordUpdate );
 	}
 

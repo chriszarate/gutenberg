@@ -7,11 +7,7 @@ import type { Awareness } from '@y/protocols/awareness';
 /**
  * Internal dependencies
  */
-import {
-	CRDT_RECORD_MAP_KEY,
-	LOCAL_EDITOR_ORIGIN,
-	LOCAL_EDITOR_PASSTHROUGH_ORIGIN,
-} from './config';
+import { LOCAL_EDITOR_ORIGIN, LOCAL_EDITOR_PASSTHROUGH_ORIGIN } from './config';
 import { getProviderCreators } from './providers';
 import type {
 	CRDTDoc,
@@ -125,8 +121,12 @@ export interface SuggestionManager {
 	/**
 	 * Temporarily suspend suggestion mode for all entities (used during
 	 * undo/redo). Returns a restore function.
+	 *
+	 * @param undoManagerDocs Per-doc UndoManager map from YMultiDocUndoManager.
+	 *                        The per-doc UndoManagers are added to AM
+	 *                        suggestionOrigins so undo transactions propagate.
 	 */
-	suspendSuggestionMode: () => () => void;
+	suspendSuggestionMode: ( undoManagerDocs?: Map< any, any > ) => () => void;
 }
 
 /**
@@ -279,18 +279,38 @@ export function createSuggestionManager(): SuggestionManager {
 		return states.has( entityId );
 	}
 
-	function suspendSuggestionMode(): () => void {
+	function suspendSuggestionMode(
+		undoManagerDocs?: Map< any, any >
+	): () => void {
 		// Save current mode for each entity and switch to editing.
 		const savedModes: Map< EntityID, SuggestionMode > = new Map();
 
 		states.forEach( ( state, entityId ) => {
+			savedModes.set( entityId, state.mode );
+
 			if ( state.mode === 'suggesting' ) {
-				savedModes.set( entityId, state.mode );
 				setMode( entityId, 'editing' );
+			}
+
+			// Add per-doc UndoManagers for the nextDoc to AM's
+			// suggestionOrigins. During undo/redo, Y.UndoManager uses
+			// itself as the transaction origin. Without this, the AM
+			// would treat undo reversals as suggestions instead of
+			// propagating them to currentDoc.
+			if ( undoManagerDocs ) {
+				const um = undoManagerDocs.get( state.nextDoc );
+				if ( um ) {
+					state.am.suggestionOrigins = [
+						...( state.am.suggestionOrigins ?? [] ),
+						um,
+					];
+				}
 			}
 		} );
 
-		// Return restore function.
+		// Return restore function. Calling setMode resets
+		// suggestionOrigins to the correct values for the mode,
+		// removing the UndoManager origins we added above.
 		return () => {
 			savedModes.forEach( ( mode, entityId ) => {
 				setMode( entityId, mode );

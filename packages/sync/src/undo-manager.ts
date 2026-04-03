@@ -27,9 +27,13 @@ interface StackItemEvent {
  * internally. This allows undo/redo operations to be transacted against multiple
  * CRDT documents (one per entity) and giving each peer their own undo/redo stack
  * without conflicts.
+ *
+ * @param {Function} onBeforeUndoRedo Optional callback that runs before undo/redo operations.
+ *                                    Receives the internal per-doc UndoManager map so the
+ *                                    caller can add their origins to pass-through lists.
  */
 export function createUndoManager(
-	onBeforeUndoRedo?: () => () => void
+	onBeforeUndoRedo?: ( undoManagerDocs: Map< any, any > ) => () => void
 ): SyncUndoManager {
 	const yUndoManager = new YMultiDocUndoManager( [], {
 		// Throttle undo/redo captures after 500ms of inactivity.
@@ -84,11 +88,17 @@ export function createUndoManager(
 			const { addUndoMeta, restoreUndoMeta } = handlers;
 
 			yUndoManager.on( 'stack-item-added', ( event: StackItemEvent ) => {
-				addUndoMeta( ydoc, event.stackItem.meta );
+				// Only process events for the doc this scope belongs to.
+				// Multiple docs may share the same YMultiDocUndoManager.
+				if ( event.ydoc === ydoc ) {
+					addUndoMeta( ydoc, event.stackItem.meta );
+				}
 			} );
 
 			yUndoManager.on( 'stack-item-popped', ( event: StackItemEvent ) => {
-				restoreUndoMeta( ydoc, event.stackItem.meta );
+				if ( event.ydoc === ydoc ) {
+					restoreUndoMeta( ydoc, event.stackItem.meta );
+				}
 			} );
 		},
 
@@ -104,7 +114,10 @@ export function createUndoManager(
 			// Temporarily suspend suggestion mode so that undo operations flow
 			// directly to currentDoc. Without this, undoing in suggesting mode
 			// would create a new suggestion that reverses the previous one.
-			const restore = onBeforeUndoRedo?.();
+			// Pass the per-doc UndoManager map so the caller can add them to
+			// the AM's suggestionOrigins (the Y.UndoManager instance is used
+			// as the transaction origin during undo).
+			const restore = onBeforeUndoRedo?.( yUndoManager.docs );
 
 			// Perform the undo operation
 			yUndoManager.undo();
@@ -127,7 +140,7 @@ export function createUndoManager(
 
 			// Temporarily suspend suggestion mode so that redo operations flow
 			// directly to currentDoc.
-			const restore = onBeforeUndoRedo?.();
+			const restore = onBeforeUndoRedo?.( yUndoManager.docs );
 
 			// Perform the redo operation
 			yUndoManager.redo();
