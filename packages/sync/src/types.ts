@@ -127,6 +127,11 @@ export interface RecordHandlers {
 	getEditedRecord: () => Promise< ObjectData >;
 	onStatusChange: OnStatusChangeCallback;
 	persistCRDTDoc: () => void;
+	/** Publish suggestion decoration ranges (insertions + deletions) to the view layer. */
+	publishDecorations?: ( decorations: {
+		insertions: Record< string, { start: number; end: number }[] >;
+		deletions: Record< string, { start: number; end: number }[] >;
+	} ) => void;
 	refetchRecord: () => Promise< void >;
 	restoreUndoMeta: ( ydoc: Y.Doc, meta: Map< string, any > ) => void;
 }
@@ -197,14 +202,6 @@ export interface SyncManager {
 		objectType: ObjectType,
 		objectId: ObjectID
 	) => SuggestionMode;
-	acceptAllSuggestions: (
-		objectType: ObjectType,
-		objectId: ObjectID
-	) => void;
-	rejectAllSuggestions: (
-		objectType: ObjectType,
-		objectId: ObjectID
-	) => void;
 }
 
 export interface SyncUndoManager extends WPUndoManager< ObjectData > {

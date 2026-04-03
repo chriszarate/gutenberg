@@ -213,6 +213,7 @@ export function createSyncManager( debug = false ): SyncManager {
 			getEditedRecord: debugWrap( handlers.getEditedRecord ),
 			onStatusChange: debugWrap( handlers.onStatusChange ),
 			persistCRDTDoc: debugWrap( handlers.persistCRDTDoc ),
+			publishDecorations: handlers.publishDecorations,
 			refetchRecord: debugWrap( handlers.refetchRecord ),
 			restoreUndoMeta: debugWrap( handlers.restoreUndoMeta ),
 		};
@@ -240,17 +241,21 @@ export function createSyncManager( debug = false ): SyncManager {
 		const awareness = syncConfig.createAwareness?.( ydoc, objectId );
 
 		// When the CRDT document is updated by an UndoManager or a connection
-		// (not a local origin), update the local store. In suggesting mode,
-		// local changes also need a read-back so the editor can display
-		// suggestion markup (<ins>/<del>). A re-entrancy guard prevents
-		// infinite cycles: the read-back sends marked-up blocks to the
-		// editor, whose write-back strips the markup (via
-		// mergeRichTextUpdate), producing a CRDT no-op.
+		// (not a local origin), update the local store. When suggestion
+		// tracking is active (in either editing or suggesting mode), local
+		// changes also need a read-back so the editor can display
+		// suggestion markup and keep decoration positions correct. A
+		// re-entrancy guard prevents infinite cycles: the read-back sends
+		// blocks with deletion text to the editor, whose write-back strips
+		// it (via mergeRichTextUpdate / stripSuggestionMarkup), producing
+		// a CRDT no-op.
 		//
-		// The read-back is debounced to avoid cursor jumps during rapid
-		// typing. Without debouncing, each keystroke triggers a full blocks
-		// update with suggestion markup, which can cause the editor to
-		// re-render and lose cursor position.
+		// In suggesting mode the read-back is debounced to avoid cursor
+		// jumps during rapid typing. Without debouncing, each keystroke
+		// triggers a full blocks update with suggestion markup, which can
+		// cause the editor to re-render and lose cursor position.
+		// In editing mode the read-back is immediate but only refreshes
+		// decorations (no editRecord dispatch).
 		let isLocalSuggestionReadBack = false;
 		let readBackTimer: ReturnType< typeof setTimeout > | null = null;
 
@@ -263,23 +268,41 @@ export function createSyncManager( debug = false ): SyncManager {
 				! ( transaction.origin instanceof Y.UndoManager )
 			) {
 				if (
-					suggestionMgr.getMode( entityId ) === 'suggesting' &&
+					suggestionMgr.hasEntity( entityId ) &&
 					! isLocalSuggestionReadBack
 				) {
-					// Debounce: wait for typing to pause before sending
-					// suggestion-marked blocks back to the editor.
-					if ( readBackTimer !== null ) {
-						clearTimeout( readBackTimer );
-					}
-					readBackTimer = setTimeout( () => {
-						readBackTimer = null;
+					const mode = suggestionMgr.getMode( entityId );
+
+					if ( mode === 'suggesting' ) {
+						// Debounce: wait for typing to pause before
+						// sending suggestion-marked blocks back to
+						// the editor.
+						if ( readBackTimer !== null ) {
+							clearTimeout( readBackTimer );
+						}
+						readBackTimer = setTimeout( () => {
+							readBackTimer = null;
+							isLocalSuggestionReadBack = true;
+							void internal
+								.updateEntityRecord( objectType, objectId )
+								.finally( () => {
+									isLocalSuggestionReadBack = false;
+								} );
+						}, 150 );
+					} else {
+						// In editing mode, refresh decorations
+						// immediately without dispatching editRecord
+						// (blocks from nextDoc are always treated as
+						// "changed", which would cause duplication).
 						isLocalSuggestionReadBack = true;
 						void internal
-							.updateEntityRecord( objectType, objectId )
+							.updateEntityRecord( objectType, objectId, {
+								decorationsOnly: true,
+							} )
 							.finally( () => {
 								isLocalSuggestionReadBack = false;
 							} );
-					}, 150 );
+					}
 				}
 				return;
 			}
@@ -770,12 +793,15 @@ export function createSyncManager( debug = false ): SyncManager {
 	 * Update the entity record in the local store with changes from the CRDT
 	 * document.
 	 *
-	 * @param {ObjectType} objectType Object type of record to update.
-	 * @param {ObjectID}   objectId   Object ID of record to update.
+	 * @param {ObjectType} objectType              Object type of record to update.
+	 * @param {ObjectID}   objectId                Object ID of record to update.
+	 * @param {Object}     options                 Optional flags for the update.
+	 * @param {boolean}    options.decorationsOnly If true, only update suggestion decorations without editing the record. Defaults to false.
 	 */
 	async function _updateEntityRecord(
 		objectType: ObjectType,
-		objectId: ObjectID
+		objectId: ObjectID,
+		{ decorationsOnly = false }: { decorationsOnly?: boolean } = {}
 	): Promise< void > {
 		const entityId = getEntityId( objectType, objectId );
 		const entityState = entityStates.get( entityId );
@@ -793,16 +819,43 @@ export function createSyncManager( debug = false ): SyncManager {
 		const readDoc = nextDoc ?? ydoc;
 
 		// Pass the DiffAttributionManager so the sync config can generate
-		// suggestion markup for rich-text attributes when in suggesting mode.
+		// suggestion markup for rich-text attributes.
 		const am = suggestionMgr.getAttributionManager( entityId );
 
 		// Determine which synced properties have actually changed by comparing
 		// them against the current edited entity record.
+		const editedRecord = await handlers.getEditedRecord();
+
+		// Flush any pending CRDT writes that may have been enqueued
+		// during the async getEditedRecord() call. Without this, the
+		// CRDT doc may be missing recently typed characters, causing
+		// the read-back to overwrite them with stale content.
+		flushPendingUpdates();
+
 		const changes = syncConfig.getChangesFromCRDTDoc(
 			readDoc,
-			await handlers.getEditedRecord(),
+			editedRecord,
 			am
 		);
+
+		// Extract suggestion decoration ranges (attached by
+		// getPostChangesFromCRDTDoc) and publish them to the view-layer
+		// decoration store. These ranges are NOT entity data — they drive
+		// the suggestion-insert and suggestion-delete format types'
+		// view-layer highlighting.
+		const decorations = ( changes as any ).__suggestionDecorations;
+		if ( decorations !== undefined ) {
+			delete ( changes as any ).__suggestionDecorations;
+			handlers.publishDecorations?.( decorations );
+		}
+
+		// In decorations-only mode (editing-mode local read-back), skip
+		// editRecord. The editor's blocks are authoritative and dispatching
+		// CRDT blocks would cause a re-render loop because the blocks
+		// comparison always returns true for non-persisted docs.
+		if ( decorationsOnly ) {
+			return;
+		}
 
 		const changedKeys = Object.keys( changes );
 
@@ -861,6 +914,10 @@ export function createSyncManager( debug = false ): SyncManager {
 
 		const entityId = getEntityId( objectType, objectId );
 		suggestionMgr.setMode( entityId, mode );
+
+		// Refresh decorations so existing suggestions remain visible
+		// regardless of which mode we switched to.
+		void internal.updateEntityRecord( objectType, objectId );
 	}
 
 	function getSuggestionMode(
@@ -871,37 +928,13 @@ export function createSyncManager( debug = false ): SyncManager {
 		return suggestionMgr.getMode( entityId );
 	}
 
-	function acceptAllSuggestions(
-		objectType: ObjectType,
-		objectId: ObjectID
-	): void {
-		const entityId = getEntityId( objectType, objectId );
-		suggestionMgr.acceptAll( entityId );
-		// After accepting, update the entity record so the editor reflects
-		// the accepted content.
-		void internal.updateEntityRecord( objectType, objectId );
-	}
-
-	function rejectAllSuggestions(
-		objectType: ObjectType,
-		objectId: ObjectID
-	): void {
-		const entityId = getEntityId( objectType, objectId );
-		suggestionMgr.rejectAll( entityId );
-		// After rejecting, update the entity record so the editor reflects
-		// the original content.
-		void internal.updateEntityRecord( objectType, objectId );
-	}
-
 	// Wrap and return the public API.
 	return {
-		acceptAllSuggestions,
 		createPersistedCRDTDoc: debugWrap( createPersistedCRDTDoc ),
 		getAwareness,
 		getSuggestionMode,
 		load: debugWrap( loadEntity ),
 		loadCollection: debugWrap( loadCollection ),
-		rejectAllSuggestions,
 		setSuggestionMode,
 		// Use getter to ensure we always return the current value of `undoManager`.
 		get undoManager(): SyncUndoManager | undefined {

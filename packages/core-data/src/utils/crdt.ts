@@ -47,7 +47,10 @@ import {
 	type YMapRecord,
 	type YMap,
 } from './crdt-utils';
-import { serializeWithSuggestions } from './crdt-suggestions';
+import {
+	extractSuggestionDecorations,
+	serializeWithSuggestions,
+} from './crdt-suggestions';
 
 // Changes that can be applied to a post entity record.
 export type PostChanges = Partial< Post > & {
@@ -291,14 +294,36 @@ export function getPostChangesFromCRDTDoc(
 	// non-block Y.Text fields (content, title, excerpt) remain clean.
 	const serialized = yMapToJSON( ymap );
 
-	// When an AM is provided, re-serialize only the blocks field with
-	// suggestion markup so that block rich-text attributes include
-	// <ins>/<del> annotations for the format library to render.
+	// When an AM is provided, re-serialize the blocks field with suggestion
+	// markup. Both insertions and deletions are extracted as decoration
+	// ranges (applied at the view layer by the format types). `<ins>` tags
+	// are stripped (content kept). `<del>` tags are preserved so that
+	// `stripSuggestionMarkup` can remove the deletion text during
+	// write-back. The deletion *text* is present in the block attributes
+	// so the editor has characters to render with the suggestion-delete
+	// format.
+	let __suggestionInsertions:
+		| Record< string, { start: number; end: number }[] >
+		| undefined;
+	let __suggestionDeletions:
+		| Record< string, { start: number; end: number }[] >
+		| undefined;
+
 	if ( am ) {
 		const blocksValue = ymap.getAttr( 'blocks' );
 		if ( blocksValue && isYArray( blocksValue ) ) {
-			( serialized as Record< string, unknown > ).blocks =
-				serializeWithSuggestions( blocksValue, am );
+			const suggestedBlocks = serializeWithSuggestions(
+				blocksValue,
+				am
+			) as any[];
+			const {
+				blocks: cleanBlocks,
+				insertions,
+				deletions,
+			} = extractSuggestionDecorations( suggestedBlocks );
+			( serialized as Record< string, unknown > ).blocks = cleanBlocks;
+			__suggestionInsertions = insertions;
+			__suggestionDeletions = deletions;
 		}
 	}
 
@@ -432,6 +457,16 @@ export function getPostChangesFromCRDTDoc(
 		changes.selection = {
 			...shiftedSelection,
 			initialPosition: 0,
+		};
+	}
+
+	// Attach suggestion decoration data so the sync manager can publish
+	// them to the decoration store for view-layer rendering by the
+	// suggestion-insert and suggestion-delete format types.
+	if ( __suggestionInsertions || __suggestionDeletions ) {
+		( changes as any ).__suggestionDecorations = {
+			insertions: __suggestionInsertions ?? {},
+			deletions: __suggestionDeletions ?? {},
 		};
 	}
 
